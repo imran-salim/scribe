@@ -7,6 +7,11 @@ import morgan from "morgan";
 import { rateLimit } from "express-rate-limit";
 import multer from "multer";
 import OpenAI, { toFile, APIError } from "openai";
+import { db } from "./db/index.js";
+import { transcriptions, users } from "./db/schema.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { eq } from "drizzle-orm";
 
 type Config = {
   openaiApiKey: string;
@@ -14,6 +19,7 @@ type Config = {
   openaiTranscribeModel: string;
   port: number;
   appPassword?: string;
+  jwtSecret: string;
 }
 
 const config: Config = {
@@ -22,6 +28,7 @@ const config: Config = {
   openaiTranscribeModel: process.env.OPENAI_TRANSCRIBE_MODEL ?? "gpt-4o-mini-transcribe",
   port: Number(process.env.PORT ?? 8000),
   appPassword: process.env.APP_PASSWORD,
+  jwtSecret: process.env.JWT_SECRET ?? "change-me-please",
 };
 
 if (!config.openaiApiKey) {
@@ -47,8 +54,52 @@ app.use(cors({
   origin: config.allowedOrigins,
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
+app.use(express.json());
 
-// Authentication middleware
+app.post("/auth/register", async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const [user] = await db.insert(users).values({
+      email,
+      password: hashedPassword,
+    }).returning();
+
+    const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: "7d" });
+    return res.json({ token, user: { id: user.id, email: user.email } });
+  } catch (err: any) {
+    if (err.code === "23505") { // Unique violation
+      return res.status(400).json({ error: "Email already registered" });
+    }
+    console.error("Registration error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/auth/login", async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
+
+  try {
+    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: "7d" });
+    return res.json({ token, user: { id: user.id, email: user.email } });
+  } catch (err) {
+    console.error("Login error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || authHeader !== `Bearer ${config.appPassword}`) {
@@ -56,6 +107,24 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
     return res.status(401).json({ error: "Unauthorized: Invalid or missing password" });
   }
   next();
+};
+
+type AuthRequest = Request & { userId?: number };
+
+const userAuthMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized: Missing or invalid token" });
+  }
+
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = jwt.verify(token, config.jwtSecret) as { userId: number };
+    req.userId = decoded.userId;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Unauthorized: Invalid token" });
+  }
 };
 
 const limiter = rateLimit({
@@ -97,7 +166,7 @@ app.get("/verify", authMiddleware, (_req: Request, res: Response) => {
   res.json({ ok: true });
 });
 
-app.post("/transcribe", authMiddleware, upload.single("audio"), async (req: Request, res: Response) => {
+app.post("/transcribe", userAuthMiddleware, upload.single("audio"), async (req: AuthRequest, res: Response) => {
   try {
     const file = req.file;
     if (!file) {
@@ -118,6 +187,16 @@ app.post("/transcribe", authMiddleware, upload.single("audio"), async (req: Requ
       model: config.openaiTranscribeModel
     });
 
+    try {
+      await db.insert(transcriptions).values({
+        userId: req.userId!,
+        text: resp.text,
+        filename: file.originalname,
+      });
+    } catch (dbErr) {
+      console.error("Database save error:", dbErr);
+    }
+
     return res.json({ text: resp.text });
   } catch (err: unknown) {
     console.error("Transcription error:", err);
@@ -133,6 +212,16 @@ app.post("/transcribe", authMiddleware, upload.single("audio"), async (req: Requ
     }
 
     return res.status(status).json({ error: message });
+  }
+});
+
+app.get("/transcriptions", userAuthMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const results = await db.select().from(transcriptions).where(eq(transcriptions.userId, req.userId!));
+    return res.json(results);
+  } catch (err) {
+    console.error("Fetch transcriptions error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
