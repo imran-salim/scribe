@@ -76,7 +76,10 @@ app.post("/auth/register", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Email already registered" });
     }
     console.error("Registration error:", err);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ 
+      error: "Internal server error", 
+      details: err instanceof Error ? err.message : String(err) 
+    });
   }
 });
 
@@ -96,7 +99,10 @@ app.post("/auth/login", async (req: Request, res: Response) => {
     return res.json({ token, user: { id: user.id, email: user.email } });
   } catch (err) {
     console.error("Login error:", err);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ 
+      error: "Internal server error", 
+      details: err instanceof Error ? err.message : String(err) 
+    });
   }
 });
 
