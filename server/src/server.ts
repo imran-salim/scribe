@@ -75,10 +75,11 @@ app.post("/auth/register", async (req: Request, res: Response) => {
     if (err.code === "23505") { // Unique violation
       return res.status(400).json({ error: "Email already registered" });
     }
-    console.error("Registration error:", err);
+    console.error("FULL Registration error:", err);
     return res.status(500).json({ 
       error: "Internal server error", 
-      details: err instanceof Error ? err.message : String(err) 
+      details: err.message || String(err),
+      code: err.code
     });
   }
 });
@@ -97,11 +98,12 @@ app.post("/auth/login", async (req: Request, res: Response) => {
 
     const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: "7d" });
     return res.json({ token, user: { id: user.id, email: user.email } });
-  } catch (err) {
-    console.error("Login error:", err);
+  } catch (err: any) {
+    console.error("FULL Login error:", err);
     return res.status(500).json({ 
       error: "Internal server error", 
-      details: err instanceof Error ? err.message : String(err) 
+      details: err.message || String(err),
+      code: err.code
     });
   }
 });
