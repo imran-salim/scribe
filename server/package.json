@@ -1,5 +1,5 @@
 {
-  "name": "server",
+  "name": "scribe-api",
   "version": "1.0.0",
   "description": "",
   "main": "dist/server.js",
@@ -10,8 +10,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Imran Salim",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "cors": "^2.8.6",
