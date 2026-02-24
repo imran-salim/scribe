@@ -48,12 +48,31 @@ console.log(`Auth enabled: Password expected (${maskedPwd})`);
 
 const app = express();
 
-app.use(helmet());
-app.use(morgan("combined"));
-app.use(cors({ 
-  origin: config.allowedOrigins,
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    const allowed = config.allowedOrigins === "*" 
+      || (Array.isArray(config.allowedOrigins) && config.allowedOrigins.includes(origin))
+      || config.allowedOrigins === origin;
+      
+    if (allowed || origin.includes("vercel.app")) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "OPTIONS"],
+};
+
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
+app.use(morgan("combined"));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.post("/auth/register", async (req: Request, res: Response) => {
