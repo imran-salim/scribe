@@ -250,6 +250,7 @@ export default function App() {
             </button>
           </form>
           
+          {/* 
           <button
             onClick={() => {
               setIsRegistering(!isRegistering);
@@ -259,6 +260,11 @@ export default function App() {
           >
             {isRegistering ? "Already have an account? Sign in" : "Need an account? Register"}
           </button>
+          */}
+
+          <div className="mt-6 text-sm text-gray-400 font-medium">
+            Registration is currently disabled.
+          </div>
 
           <p className="mt-8 text-sm text-gray-500">
             For support, contact{" "}
