@@ -92,15 +92,16 @@ app.post("/auth/register", async (req: Request, res: Response) => {
 
     const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: "7d" });
     return res.json({ token, user: { id: user.id, email: user.email } });
-  } catch (err: any) {
-    if (err.code === "23505") { // Unique violation
+  } catch (err: unknown) {
+    const error = err as { code?: string; message?: string };
+    if (error.code === "23505") { // Unique violation
       return res.status(400).json({ error: "Email already registered" });
     }
     console.error("FULL Registration error:", err);
     return res.status(500).json({ 
       error: "Internal server error", 
-      details: err.message || String(err),
-      code: err.code
+      details: error.message || String(err),
+      code: error.code
     });
   }
   */
@@ -120,12 +121,13 @@ app.post("/auth/login", async (req: Request, res: Response) => {
 
     const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: "7d" });
     return res.json({ token, user: { id: user.id, email: user.email } });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("FULL Login error:", err);
+    const error = err as { code?: string; message?: string };
     return res.status(500).json({ 
       error: "Internal server error", 
-      details: err.message || String(err),
-      code: err.code
+      details: error.message || String(err),
+      code: error.code
     });
   }
 });
@@ -261,11 +263,14 @@ const server = app.listen(config.port, "0.0.0.0", () => {
 
 const shutdown = () => {
   try {
-    if (typeof (server as any).closeAllConnections === "function") {
-      (server as any).closeAllConnections();
+    const s = server as unknown as { closeAllConnections?: () => void };
+    if (typeof s.closeAllConnections === "function") {
+      s.closeAllConnections();
     }
     server.close();
-  } catch (err) {}
+  } catch (err) {
+    // Shutdown errors are usually safe to ignore during process exit
+  }
   
   setTimeout(() => process.exit(0), 200);
 };
