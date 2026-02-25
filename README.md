@@ -2,6 +2,10 @@
 
 A secure, full-stack audio transcription application. Record audio in your browser and get high-quality transcripts powered by OpenAI.
 
+**Live Application**: [https://scribe-eight-mauve.vercel.app/](https://scribe-eight-mauve.vercel.app/)
+
+> **Note**: Account registration is currently disabled. Please contact the author at [narmilas@proton.me](mailto:narmilas@proton.me) to request access.
+
 ## Features
 - **User Authentication**: Secure registration and login using JWT and Bcrypt.
 - **Transcription History**: Automatically save and browse your past transcriptions.
