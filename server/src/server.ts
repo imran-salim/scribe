@@ -48,16 +48,21 @@ console.log(`Auth enabled: Password expected (${maskedPwd})`);
 
 const app = express();
 
+type OriginDecision = boolean | string | RegExp | Array<string | RegExp>;
+
 const corsOptions = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+  origin: (
+    requestOrigin: string | undefined, 
+    callback: (err: Error | null, allow?: OriginDecision) => void
+  ) => {
     // Allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true);
+    if (!requestOrigin) return callback(null, true);
     
     const allowed = config.allowedOrigins === "*" 
-      || (Array.isArray(config.allowedOrigins) && config.allowedOrigins.includes(origin))
-      || config.allowedOrigins === origin;
+      || (Array.isArray(config.allowedOrigins) && config.allowedOrigins.includes(requestOrigin))
+      || config.allowedOrigins === requestOrigin;
       
-    if (allowed || origin.includes("vercel.app")) {
+    if (allowed) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
