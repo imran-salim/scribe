@@ -38,7 +38,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(JSON.parse(localStorage.getItem("scribe_user") || "null"));
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!token);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  // const [isRegistering, setIsRegistering] = useState<boolean>(false);
+  const [isRegistering, setIsRegistering] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [recording, setRecording] = useState<boolean>(false);
   const [transcript, setTranscript] = useState<string>("");
@@ -91,8 +91,8 @@ export default function App() {
     
     try {
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
-      // const endpoint = isRegistering ? "/auth/register" : "/auth/login";
-      const res = await fetch(`${apiUrl}/auth/login`, {
+      const endpoint = isRegistering ? "/auth/register" : "/auth/login";
+      const res = await fetch(`${apiUrl}${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -214,12 +214,12 @@ export default function App() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white shadow-xl rounded-2xl p-8 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900 mb-8">Scribe</h1>
+            <h2 className="text-xl font-bold text-gray-700 mb-6">
+              {isRegistering ? "Create an account" : "Sign in"}
+            </h2>
           {/* <h2 className="text-xl font-bold text-gray-700 mb-6">
-            {isRegistering ? "Create an account" : "Sign in"}
-          </h2> */}
-          <h2 className="text-xl font-bold text-gray-700 mb-6">
             {"Sign in"}
-          </h2> 
+          </h2>  */}
           <form onSubmit={handleAuth} className="space-y-4">
             <div>
               <input
@@ -249,12 +249,12 @@ export default function App() {
               disabled={isVerifying}
               className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {/* {isVerifying ? "Processing..." : isRegistering ? "Register" : "Sign In"} */}
-              {isVerifying ? "Processing..." : "Sign In"}
+              {isVerifying ? "Processing..." : isRegistering ? "Register" : "Sign In"}
+              {/* {isVerifying ? "Processing..." : "Sign In"} */}
             </button>
           </form>
           
-          {/* 
+          
           <button
             onClick={() => {
               setIsRegistering(!isRegistering);
@@ -264,7 +264,7 @@ export default function App() {
           >
             {isRegistering ? "Already have an account? Sign in" : "Need an account? Register"}
           </button>
-          */}
+         
 
           <div className="mt-6 text-sm text-gray-400 font-medium">
             Registration is currently disabled.
