@@ -47,6 +47,7 @@ const maskedPwd = config.appPassword.length > 2
 console.log(`Auth enabled: Password expected (${maskedPwd})`);
 
 const app = express();
+app.set("trust proxy", 1);
 
 type OriginDecision = boolean | string | RegExp | Array<string | RegExp>;
 
