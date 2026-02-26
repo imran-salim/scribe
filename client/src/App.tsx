@@ -126,6 +126,12 @@ export default function App() {
     setIsAuthenticated(false);
     setAuthError(null);
     setHistory([]);
+    setTranscript("");
+    setError(null);
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+      setAudioUrl(null);
+    }
   };
 
   const start = useCallback(async () => {
