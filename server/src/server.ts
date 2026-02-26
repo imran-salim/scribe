@@ -57,6 +57,7 @@ const corsOptions = {
   ) => {
     // Allow requests with no origin (like mobile apps or curl)
     if (!requestOrigin) return callback(null, true);
+    if (requestOrigin?.includes("localhost:")) return callback(null, true);
     
     const allowed = config.allowedOrigins === "*" 
       || (Array.isArray(config.allowedOrigins) && config.allowedOrigins.includes(requestOrigin))
