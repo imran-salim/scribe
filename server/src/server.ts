@@ -83,8 +83,8 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 app.post("/auth/register", async (req: Request, res: Response) => {
-  // return res.status(403).json({ error: "Registration is currently disabled." });
-  
+  return res.status(403).json({ error: "Registration is currently disabled." });
+  /*
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
@@ -112,7 +112,7 @@ app.post("/auth/register", async (req: Request, res: Response) => {
       code: error.code
     });
   }
-  
+  */
 });
 
 app.post("/auth/login", async (req: Request, res: Response) => {
