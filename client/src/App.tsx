@@ -67,6 +67,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (isAuthenticated && token) {
+      fetchHistory(token);
+    }
+  }, [isAuthenticated, token, fetchHistory]);
+
+  useEffect(() => {
     if (!isAuthenticated) return;
 
     const INACTIVITY_LIMIT = 2 * 60 * 1000; // 2 minutes
