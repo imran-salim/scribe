@@ -83,21 +83,22 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 app.post("/auth/register", async (req: Request, res: Response) => {
-  return res.status(403).json({ error: "Registration is currently disabled." });
-  /*
+  // return res.status(403).json({ error: "Registration is currently disabled." });
+  
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
   }
 
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
     const [user] = await db.insert(users).values({
       email,
       password: hashedPassword,
     }).returning();
 
-    const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: "7d" });
+    const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: "1h" });
     return res.json({ token, user: { id: user.id, email: user.email } });
   } catch (err: unknown) {
     const error = err as { code?: string; message?: string };
@@ -111,7 +112,7 @@ app.post("/auth/register", async (req: Request, res: Response) => {
       code: error.code
     });
   }
-  */
+  
 });
 
 app.post("/auth/login", async (req: Request, res: Response) => {
@@ -126,7 +127,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: "7d" });
+    const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: "1h" });
     return res.json({ token, user: { id: user.id, email: user.email } });
   } catch (err: unknown) {
     console.error("FULL Login error:", err);
