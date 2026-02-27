@@ -89,7 +89,7 @@ const authSchema = z.object({
   password: z.string().min(8).max(100),
 });
 
-app.post("/auth/register", async (req: Request, res: Response) => {
+app.post("/auth/register", authLimiter, async (req: Request, res: Response) => {
   return res.status(403).json({ error: "Registration is currently disabled." });
   /*
   const validation = authSchema.safeParse(req.body);
@@ -123,7 +123,7 @@ app.post("/auth/register", async (req: Request, res: Response) => {
   */
 });
 
-app.post("/auth/login", async (req: Request, res: Response) => {
+app.post("/auth/login", authLimiter, async (req: Request, res: Response) => {
   const validation = authSchema.safeParse(req.body);
   if (!validation.success) {
     return res.status(400).json({ error: "Invalid email or password format" });
@@ -183,6 +183,15 @@ const limiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many requests, please try again later." },
 });
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10, // Max 10 attempts per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many authentication attempts, please try again in 15 minutes." },
+});
+
 app.use(limiter);
 
 const upload = multer({
