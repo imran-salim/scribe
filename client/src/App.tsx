@@ -34,8 +34,8 @@ function pickMimeType(): string {
 const MIME_TYPE = pickMimeType();
 
 export default function App() {
-  const [token, setToken] = useState<string>(localStorage.getItem("scribe_token") || "");
-  const [user, setUser] = useState<User | null>(JSON.parse(localStorage.getItem("scribe_user") || "null"));
+  const [token, setToken] = useState<string>("");
+  const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!token);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
@@ -103,8 +103,6 @@ export default function App() {
       const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem("scribe_token", data.token);
-        localStorage.setItem("scribe_user", JSON.stringify(data.user));
         setToken(data.token);
         setUser(data.user);
         setIsAuthenticated(true);
@@ -119,8 +117,6 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("scribe_token");
-    localStorage.removeItem("scribe_user");
     setToken("");
     setUser(null);
     setIsAuthenticated(false);
