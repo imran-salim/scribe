@@ -67,10 +67,33 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated && token) {
-      fetchHistory(token);
-    }
-  }, [isAuthenticated, token, fetchHistory]);
+    if (!isAuthenticated) return;
+
+    const INACTIVITY_LIMIT = 2 * 60 * 1000; // 2 minutes
+    let timeoutId: number;
+
+    const resetTimer = () => {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        handleLogout();
+        alert("You have been logged out due to inactivity.");
+      }, INACTIVITY_LIMIT);
+    };
+
+    const activityEvents = ["mousedown", "mousemove", "keydown", "scroll", "touchstart"];
+    activityEvents.forEach((event) => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    resetTimer();
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      activityEvents.forEach((event) => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     return () => {
