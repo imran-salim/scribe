@@ -12,6 +12,8 @@ import { transcriptions, users } from "./db/schema.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
+import validator from "validator";
 
 type Config = {
   openaiApiKey: string;
@@ -82,13 +84,19 @@ app.use(morgan("combined"));
 app.use(cors(corsOptions));
 app.use(express.json());
 
+const authSchema = z.object({
+  email: z.string().email().transform(val => validator.normalizeEmail(val) || val),
+  password: z.string().min(8).max(100),
+});
+
 app.post("/auth/register", async (req: Request, res: Response) => {
   return res.status(403).json({ error: "Registration is currently disabled." });
   /*
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password are required" });
+  const validation = authSchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ error: "Invalid input", details: validation.error.format() });
   }
+  const { email, password } = validation.data;
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -116,10 +124,11 @@ app.post("/auth/register", async (req: Request, res: Response) => {
 });
 
 app.post("/auth/login", async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password are required" });
+  const validation = authSchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ error: "Invalid email or password format" });
   }
+  const { email, password } = validation.data;
 
   try {
     const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
