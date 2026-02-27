@@ -89,6 +89,24 @@ const authSchema = z.object({
   password: z.string().min(8).max(100),
 });
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10, // Max 10 attempts per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many authentication attempts, please try again in 15 minutes." },
+});
+
+app.use(limiter);
+
 app.post("/auth/register", authLimiter, async (req: Request, res: Response) => {
   return res.status(403).json({ error: "Registration is currently disabled." });
   /*
@@ -175,24 +193,6 @@ const userAuthMiddleware = (req: AuthRequest, res: Response, next: NextFunction)
     return res.status(401).json({ error: "Unauthorized: Invalid token" });
   }
 };
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many requests, please try again later." },
-});
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10, // Max 10 attempts per 15 minutes
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many authentication attempts, please try again in 15 minutes." },
-});
-
-app.use(limiter);
 
 const upload = multer({
   storage: multer.memoryStorage(),
