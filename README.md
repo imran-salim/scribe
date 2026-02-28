@@ -35,6 +35,7 @@ npm install
 # Configure .env (see server/README.md)
 npm run db:push  # Sync database schema
 npm run dev
+npm test         # Run unit tests (optional)
 ```
 
 ### 3. Frontend
