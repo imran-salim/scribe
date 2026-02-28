@@ -32,13 +32,8 @@ router.post("/auth/login", authLimiter, async (req: Request, res: Response) => {
     }
     return res.json(result);
   } catch (err: unknown) {
-    console.error("FULL Login error:", err);
-    const error = err as { code?: string; message?: string };
-    return res.status(500).json({
-      error: "Internal server error",
-      details: error.message || String(err),
-      code: error.code
-    });
+    console.error("Login error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
