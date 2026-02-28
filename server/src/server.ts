@@ -2,8 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import { rateLimit } from "express-rate-limit";
-import { config } from "./context.js";
+import { config, limiter } from "./context.js";
 import router from "./routes/index.js";
 
 const maskedPwd = config.appPassword!.length > 2 
@@ -46,15 +45,6 @@ app.use(helmet({
 app.use(morgan("combined"));
 app.use(cors(corsOptions));
 app.use(express.json());
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many requests, please try again later." },
-});
-
 app.use(limiter);
 app.use("/", router);
 
