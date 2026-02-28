@@ -1,15 +1,11 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
 import validator from "validator";
-import { db } from "../db/index.js";
-import { users } from "../db/schema.js";
 import { config } from "../config.js";
 import { authLimiter } from "../context.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { login } from "../services/auth.js";
 
 const router = Router();
 
@@ -30,13 +26,11 @@ router.post("/auth/login", authLimiter, async (req: Request, res: Response) => {
   const { email, password } = validation.data;
 
   try {
-    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    const result = await login(email, password);
+    if (!result) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
-
-    const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: "1h" });
-    return res.json({ token, user: { id: user.id, email: user.email } });
+    return res.json(result);
   } catch (err: unknown) {
     console.error("FULL Login error:", err);
     const error = err as { code?: string; message?: string };

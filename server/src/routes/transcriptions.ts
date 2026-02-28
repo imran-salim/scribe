@@ -1,12 +1,9 @@
 import { Router } from "express";
 import type { Response } from "express";
-import { eq } from "drizzle-orm";
-import { toFile, APIError } from "openai";
-import { db } from "../db/index.js";
-import { transcriptions } from "../db/schema.js";
-import { config } from "../config.js";
-import { openai, upload } from "../context.js";
+import { APIError } from "openai";
+import { upload } from "../context.js";
 import { type AuthRequest, userAuthMiddleware } from "../middleware/auth.js";
+import { transcribe, getUserTranscriptions } from "../services/transcription.js";
 
 const router = Router();
 
@@ -23,37 +20,21 @@ const allowedMime = new Set([
 ]);
 
 router.post("/transcribe", userAuthMiddleware, upload.single("audio"), async (req: AuthRequest, res: Response) => {
-  try {
-    const file = req.file;
-    if (!file) {
-      return res.status(400).json({ error: "No file uploaded (field: audio)" });
-    }
+  const file = req.file;
+  if (!file) {
+    return res.status(400).json({ error: "No file uploaded (field: audio)" });
+  }
 
-    if (!allowedMime.has(file.mimetype)) {
-      return res.status(400).json({
-        error: `Unsupported mimetype: ${file.mimetype}`,
-        allowed: Array.from(allowedMime)
-      });
-    }
-
-    const audioFile = await toFile(file.buffer, file.originalname, { type: file.mimetype });
-
-    const resp = await openai.audio.transcriptions.create({
-      file: audioFile,
-      model: config.openaiTranscribeModel
+  if (!allowedMime.has(file.mimetype)) {
+    return res.status(400).json({
+      error: `Unsupported mimetype: ${file.mimetype}`,
+      allowed: Array.from(allowedMime)
     });
+  }
 
-    try {
-      await db.insert(transcriptions).values({
-        userId: req.userId!,
-        text: resp.text,
-        filename: file.originalname,
-      });
-    } catch (dbErr) {
-      console.error("Database save error:", dbErr);
-    }
-
-    return res.json({ text: resp.text });
+  try {
+    const text = await transcribe(file, req.userId!);
+    return res.json({ text });
   } catch (err: unknown) {
     console.error("Transcription error:", err);
 
@@ -73,7 +54,7 @@ router.post("/transcribe", userAuthMiddleware, upload.single("audio"), async (re
 
 router.get("/transcriptions", userAuthMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const results = await db.select().from(transcriptions).where(eq(transcriptions.userId, req.userId!));
+    const results = await getUserTranscriptions(req.userId!);
     return res.json(results);
   } catch (err) {
     console.error("Fetch transcriptions error:", err);
