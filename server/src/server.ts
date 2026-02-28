@@ -2,7 +2,8 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import { config, limiter } from "./context.js";
+import { config } from "./config.js";
+import { limiter } from "./context.js";
 import router from "./routes/index.js";
 
 const maskedPwd = config.appPassword!.length > 2 

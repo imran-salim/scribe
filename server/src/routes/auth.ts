@@ -7,7 +7,8 @@ import { z } from "zod";
 import validator from "validator";
 import { db } from "../db/index.js";
 import { users } from "../db/schema.js";
-import { config, authLimiter } from "../context.js";
+import { config } from "../config.js";
+import { authLimiter } from "../context.js";
 import { authMiddleware } from "../middleware/auth.js";
 
 const router = Router();

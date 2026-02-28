@@ -4,7 +4,8 @@ import { eq } from "drizzle-orm";
 import { toFile, APIError } from "openai";
 import { db } from "../db/index.js";
 import { transcriptions } from "../db/schema.js";
-import { config, openai, upload } from "../context.js";
+import { config } from "../config.js";
+import { openai, upload } from "../context.js";
 import { type AuthRequest, userAuthMiddleware } from "../middleware/auth.js";
 
 const router = Router();

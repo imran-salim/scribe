@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { config } from "../context.js";
+import { config } from "../config.js";
 
 export type AuthRequest = Request & { userId?: number };
 
