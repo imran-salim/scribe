@@ -5,7 +5,7 @@ import validator from "validator";
 import { config } from "../config.js";
 import { authLimiter } from "../context.js";
 import { authMiddleware } from "../middleware/auth.js";
-import { login } from "../services/auth.js";
+import { login, register } from "../services/auth.js";
 
 const router = Router();
 
@@ -14,8 +14,24 @@ const authSchema = z.object({
   password: z.string().min(8).max(100),
 });
 
-router.post("/auth/register", authLimiter, async (_req: Request, res: Response) => {
+router.post("/auth/register", authLimiter, async (req: Request, res: Response) => {
   return res.status(403).json({ error: "Registration is currently disabled." });
+  // const validation = authSchema.safeParse(req.body);
+  // if (!validation.success) {
+  //   return res.status(400).json({ error: "Invalid email or password format (password must be at least 8 characters long)" });
+  // }
+  // const { email, password } = validation.data;
+
+  // try {
+  //   const result = await register(email, password);
+  //   if (!result) {
+  //     return res.status(409).json({ error: "An account with that email already exists" });
+  //   }
+  //   return res.status(201).json(result);
+  // } catch (err: unknown) {
+  //   console.error("Register error:", err);
+  //   return res.status(500).json({ error: "Internal server error" });
+  // }
 });
 
 router.post("/auth/login", authLimiter, async (req: Request, res: Response) => {
