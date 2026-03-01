@@ -1,20 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-
-type TranscriptionResponse = {
-  text: string;
-}
-
-type User = {
-  id: number;
-  email: string;
-}
-
-type HistoryItem = {
-  id: number;
-  text: string;
-  filename: string;
-  createdAt: string;
-}
+import { ApiError, login, register, fetchTranscriptions, transcribeAudio } from "./api";
+import type { HistoryItem, User } from "./api";
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -51,16 +37,8 @@ export default function App() {
 
   const fetchHistory = useCallback(async (authToken: string) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
-      const res = await fetch(`${apiUrl}/transcriptions`, {
-        headers: {
-          "Authorization": `Bearer ${authToken}`,
-        },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setHistory(data);
-      }
+      const data = await fetchTranscriptions(authToken);
+      setHistory(data);
     } catch (err) {
       console.error("Failed to fetch history:", err);
     }
@@ -119,27 +97,16 @@ export default function App() {
     const password = formData.get("password") as string;
     
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
-      const endpoint = isRegistering ? "/auth/register" : "/auth/login";
-      const res = await fetch(`${apiUrl}${endpoint}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setToken(data.token);
-        setUser(data.user);
-        setIsAuthenticated(true);
-      } else {
-        setAuthError(data.error || "Authentication failed");
-      }
+      const data = await (isRegistering ? register : login)(email, password);
+      setToken(data.token);
+      setUser(data.user);
+      setIsAuthenticated(true);
     } catch (err) {
-      setAuthError("Could not connect to server. Check your connection or API URL.");
+      if (err instanceof ApiError) {
+        setAuthError(err.message);
+      } else {
+        setAuthError("Could not connect to server. Check your connection or API URL.");
+      }
     } finally {
       setIsVerifying(false);
     }
@@ -188,40 +155,11 @@ export default function App() {
         setAudioUrl(url);
 
         try {
-          const fd = new FormData();
-          const type = blob.type;
-          const ext = type.includes("mp4")
-            ? "m4a"
-            : type.includes("mpeg") || type.includes("mp3")
-              ? "mp3"
-              : type.includes("wav")
-                ? "wav"
-                : "webm";
-
-          fd.append("audio", blob, `recording.${ext}`);
-
-          const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
-          const res = await fetch(`${apiUrl}/transcribe`, {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-            },
-            body: fd,
-          });
-
-          if (!res.ok) {
-            if (res.status === 401) {
-              handleLogout();
-              throw new Error("Session expired. Please log in again.");
-            }
-            const msg = await res.text();
-            throw new Error(msg || `HTTP ${res.status}`);
-          }
-
-          const data = (await res.json()) as TranscriptionResponse;
+          const data = await transcribeAudio(blob, token);
           setTranscript(data.text);
           fetchHistory(token);
         } catch (e: unknown) {
+          if (e instanceof ApiError && e.status === 401) handleLogout();
           setError(getErrorMessage(e));
         }
       };

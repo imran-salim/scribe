@@ -1,0 +1,86 @@
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+export class ApiError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+  }
+}
+
+export type User = {
+  id: number;
+  email: string;
+};
+
+export type AuthResponse = {
+  token: string;
+  user: User;
+};
+
+export type HistoryItem = {
+  id: number;
+  text: string;
+  filename: string;
+  createdAt: string;
+};
+
+export type TranscriptionResponse = {
+  text: string;
+};
+
+export async function login(email: string, password: string): Promise<AuthResponse> {
+  const res = await fetch(`${BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new ApiError(data.error || "Authentication failed", res.status);
+  return data;
+}
+
+export async function register(email: string, password: string): Promise<AuthResponse> {
+  const res = await fetch(`${BASE}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new ApiError(data.error || "Registration failed", res.status);
+  return data;
+}
+
+export async function fetchTranscriptions(token: string): Promise<HistoryItem[]> {
+  const res = await fetch(`${BASE}/transcriptions`, {
+    headers: { "Authorization": `Bearer ${token}` },
+  });
+  if (!res.ok) throw new ApiError(`HTTP ${res.status}`, res.status);
+  return res.json();
+}
+
+export async function transcribeAudio(blob: Blob, token: string): Promise<TranscriptionResponse> {
+  const type = blob.type;
+  const ext = type.includes("mp4")
+    ? "m4a"
+    : type.includes("mpeg") || type.includes("mp3")
+      ? "mp3"
+      : type.includes("wav")
+        ? "wav"
+        : "webm";
+
+  const fd = new FormData();
+  fd.append("audio", blob, `recording.${ext}`);
+
+  const res = await fetch(`${BASE}/transcribe`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${token}` },
+    body: fd,
+  });
+
+  if (!res.ok) {
+    if (res.status === 401) throw new ApiError("Session expired. Please log in again.", 401);
+    const msg = await res.text();
+    throw new ApiError(msg || `HTTP ${res.status}`, res.status);
+  }
+
+  return res.json();
+}
