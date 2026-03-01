@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { jwt } from "zod";
 
 type Config = {
   openaiApiKey: string;
@@ -25,5 +26,10 @@ if (!config.openaiApiKey) {
 
 if (!config.appPassword) {
   console.error("FATAL: APP_PASSWORD is not set in environment.");
+  process.exit(1);
+}
+
+if (!config.jwtSecret || config.jwtSecret === "change-me-please") {
+  console.error("FATAL: JWT_SECRET must be set.");
   process.exit(1);
 }
