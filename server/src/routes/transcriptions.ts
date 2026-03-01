@@ -39,13 +39,11 @@ router.post("/transcribe", transcribeLimiter, userAuthMiddleware, upload.single(
     console.error("Transcription error:", err);
 
     let status = 500;
-    let message = "Internal Server Error";
+    let message = "Internal server error";
 
     if (err instanceof APIError) {
       status = err.status ?? 500;
-      message = status === 500 ? "Internal Server Error" : (err.message ?? "An error occurred");
-    } else if (err instanceof Error) {
-      message = err.message;
+      message = status >= 500 ? "Internal server error" : (err.message ?? "An error occurred");
     }
 
     return res.status(status).json({ error: message });

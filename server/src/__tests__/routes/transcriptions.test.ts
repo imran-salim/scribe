@@ -101,7 +101,7 @@ describe("POST /transcribe", () => {
     expect(transcribe).toHaveBeenCalledWith(expect.objectContaining({ mimetype: "audio/webm" }), 42);
   });
 
-  it("forwards the APIError status from OpenAI", async () => {
+  it("forwards the APIError status and message from OpenAI for client errors", async () => {
     uploadMiddleware.mockImplementation((req: unknown, _res: unknown, next: () => void) => {
       (req as Record<string, unknown>).file = makeFilePayload();
       next();
@@ -116,17 +116,37 @@ describe("POST /transcribe", () => {
 
     const res = await request(createApp()).post("/transcribe");
     expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: "bad request" });
   });
 
-  it("returns 500 for a generic service error", async () => {
+  it("hides the OpenAI error message for server errors", async () => {
     uploadMiddleware.mockImplementation((req: unknown, _res: unknown, next: () => void) => {
       (req as Record<string, unknown>).file = makeFilePayload();
       next();
     });
-    vi.mocked(transcribe).mockRejectedValue(new Error("unexpected"));
+    vi.mocked(transcribe).mockRejectedValue(
+      Object.assign(Object.create(APIError.prototype) as InstanceType<typeof APIError>, {
+        message: "upstream failure",
+        status: 500,
+        name: "APIError",
+      }),
+    );
 
     const res = await request(createApp()).post("/transcribe");
     expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: "Internal server error" });
+  });
+
+  it("returns 500 with a generic message for unexpected errors", async () => {
+    uploadMiddleware.mockImplementation((req: unknown, _res: unknown, next: () => void) => {
+      (req as Record<string, unknown>).file = makeFilePayload();
+      next();
+    });
+    vi.mocked(transcribe).mockRejectedValue(new Error("connection refused"));
+
+    const res = await request(createApp()).post("/transcribe");
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: "Internal server error" });
   });
 });
 
