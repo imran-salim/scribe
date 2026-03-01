@@ -1,0 +1,1 @@
+CREATE INDEX "transcriptions_user_id_created_at_idx" ON "transcriptions" USING btree ("user_id","created_at");
