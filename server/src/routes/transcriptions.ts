@@ -20,6 +20,7 @@ const allowedMime = new Set([
 ]);
 
 router.post("/transcribe", transcribeLimiter, userAuthMiddleware, upload.single("audio"), async (req: AuthRequest, res: Response) => {
+  if (!req.userId) return res.status(401).json({ error: "Unauthorized" });
   const file = req.file;
   if (!file) {
     return res.status(400).json({ error: "No file uploaded (field: audio)" });
@@ -51,11 +52,12 @@ router.post("/transcribe", transcribeLimiter, userAuthMiddleware, upload.single(
 });
 
 router.get("/transcriptions", userAuthMiddleware, async (req: AuthRequest, res: Response) => {
+  if (!req.userId) return res.status(401).json({ error: "Unauthorized" });
   const limit = Math.min(Math.max(1, parseInt(req.query.limit as string, 10) || 50), 100);
   const offset = Math.max(0, parseInt(req.query.offset as string, 10) || 0);
 
   try {
-    const results = await getUserTranscriptions(req.userId!, limit, offset);
+    const results = await getUserTranscriptions(req.userId, limit, offset);
     return res.json(results);
   } catch (err) {
     console.error("Fetch transcriptions error:", err);

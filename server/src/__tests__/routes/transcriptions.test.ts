@@ -7,6 +7,13 @@ const uploadMiddleware = vi.hoisted(() =>
   vi.fn((_req: unknown, _res: unknown, next: () => void) => next())
 );
 
+const userAuthMiddlewareMock = vi.hoisted(() =>
+  vi.fn((req: Record<string, unknown>, _res: unknown, next: () => void) => {
+    req.userId = 42;
+    next();
+  })
+);
+
 vi.mock("../../config.js", () => ({
   config: { jwtSecret: "test-secret" },
 }));
@@ -18,10 +25,7 @@ vi.mock("../../context.js", () => ({
 
 // Bypass JWT verification — inject a fixed userId for all tests
 vi.mock("../../middleware/auth.js", () => ({
-  userAuthMiddleware: (req: Record<string, unknown>, _res: unknown, next: () => void) => {
-    req.userId = 42;
-    next();
-  },
+  userAuthMiddleware: userAuthMiddlewareMock,
 }));
 
 vi.mock("../../services/transcription.js", () => ({
@@ -67,8 +71,19 @@ function makeFilePayload(overrides: Partial<Express.Multer.File> = {}): Express.
 describe("POST /transcribe", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    userAuthMiddlewareMock.mockImplementation((req: Record<string, unknown>, _res: unknown, next: () => void) => {
+      req.userId = 42;
+      next();
+    });
     // Default: multer calls next() without setting req.file (simulates no upload)
     uploadMiddleware.mockImplementation((_req: unknown, _res: unknown, next: () => void) => next());
+  });
+
+  it("returns 401 when userId is missing after middleware", async () => {
+    userAuthMiddlewareMock.mockImplementationOnce((_req: unknown, _res: unknown, next: () => void) => next());
+    const res = await request(createApp()).post("/transcribe");
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: "Unauthorized" });
   });
 
   it("returns 400 when no file is uploaded", async () => {
@@ -151,7 +166,20 @@ describe("POST /transcribe", () => {
 });
 
 describe("GET /transcriptions", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    userAuthMiddlewareMock.mockImplementation((req: Record<string, unknown>, _res: unknown, next: () => void) => {
+      req.userId = 42;
+      next();
+    });
+  });
+
+  it("returns 401 when userId is missing after middleware", async () => {
+    userAuthMiddlewareMock.mockImplementationOnce((_req: unknown, _res: unknown, next: () => void) => next());
+    const res = await request(createApp()).get("/transcriptions");
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: "Unauthorized" });
+  });
 
   it("returns the authenticated user's transcriptions with default pagination", async () => {
     const rows = [{ id: 1, userId: 42, text: "Hello", filename: "a.webm", createdAt: new Date().toISOString() }];

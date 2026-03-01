@@ -11,13 +11,17 @@ vi.mock("../../context.js", () => ({
   authLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
+const userAuthMiddlewareMock = vi.hoisted(() =>
+  vi.fn((req: Record<string, unknown>, _res: unknown, next: () => void) => {
+    req.userId = 1;
+    next();
+  })
+);
+
 // Bypass app-password check for /verify; inject userId for /auth/logout
 vi.mock("../../middleware/auth.js", () => ({
   authMiddleware: (_req: unknown, _res: unknown, next: () => void) => next(),
-  userAuthMiddleware: (req: Record<string, unknown>, _res: unknown, next: () => void) => {
-    req.userId = 1;
-    next();
-  },
+  userAuthMiddleware: userAuthMiddlewareMock,
 }));
 
 vi.mock("../../services/auth.js", () => ({
@@ -159,7 +163,20 @@ describe("POST /auth/refresh", () => {
 });
 
 describe("POST /auth/logout", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    userAuthMiddlewareMock.mockImplementation((req: Record<string, unknown>, _res: unknown, next: () => void) => {
+      req.userId = 1;
+      next();
+    });
+  });
+
+  it("returns 401 when userId is missing after middleware", async () => {
+    userAuthMiddlewareMock.mockImplementationOnce((_req: unknown, _res: unknown, next: () => void) => next());
+    const res = await request(createApp()).post("/auth/logout");
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: "Unauthorized" });
+  });
 
   it("returns 200 with ok: true on success", async () => {
     vi.mocked(logout).mockResolvedValue(undefined);

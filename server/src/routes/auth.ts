@@ -74,8 +74,9 @@ router.post("/auth/refresh", authLimiter, async (req: Request, res: Response) =>
 });
 
 router.post("/auth/logout", userAuthMiddleware, async (req: AuthRequest, res: Response) => {
+  if (!req.userId) return res.status(401).json({ error: "Unauthorized" });
   try {
-    await logout(req.userId!);
+    await logout(req.userId);
     return res.json({ ok: true });
   } catch (err: unknown) {
     console.error("Logout error:", err);
