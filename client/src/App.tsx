@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, login, register, fetchTranscriptions, transcribeAudio } from "./api";
-import type { HistoryItem, User } from "./api";
+import type { HistoryItem, User } from "./types";
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;

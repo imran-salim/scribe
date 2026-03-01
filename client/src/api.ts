@@ -1,3 +1,8 @@
+import type { AuthResponse, HistoryItem, TranscriptionResponse } from "./types";
+
+export type { AuthResponse, HistoryItem, TranscriptionResponse } from "./types";
+export type { User } from "./types";
+
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export class ApiError extends Error {
@@ -5,27 +10,6 @@ export class ApiError extends Error {
     super(message);
   }
 }
-
-export type User = {
-  id: number;
-  email: string;
-};
-
-export type AuthResponse = {
-  token: string;
-  user: User;
-};
-
-export type HistoryItem = {
-  id: number;
-  text: string;
-  filename: string;
-  createdAt: string;
-};
-
-export type TranscriptionResponse = {
-  text: string;
-};
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
   const res = await fetch(`${BASE}/auth/login`, {
