@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ApiError, login, register } from "../api";
+import { ApiError, login, register, logoutUser } from "../api";
 import type { User } from "../types";
 
 export function useAuth() {
@@ -35,7 +35,14 @@ export function useAuth() {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    if (token) {
+      try {
+        await logoutUser(token);
+      } catch {
+        // best-effort: clear local state regardless of API response
+      }
+    }
     setToken("");
     setUser(null);
     setIsAuthenticated(false);

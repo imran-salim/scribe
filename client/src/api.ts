@@ -35,6 +35,13 @@ export async function register(email: string, password: string): Promise<AuthRes
   return data;
 }
 
+export async function logoutUser(token: string): Promise<void> {
+  await fetch(`${BASE}/auth/logout`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${token}` },
+  });
+}
+
 export async function fetchTranscriptions(token: string): Promise<HistoryItem[]> {
   const res = await fetch(`${BASE}/transcriptions`, {
     headers: { "Authorization": `Bearer ${token}` },

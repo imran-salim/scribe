@@ -4,10 +4,10 @@ import { useAuth } from './useAuth';
 
 vi.mock('../api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../api')>();
-  return { ...actual, login: vi.fn(), register: vi.fn() };
+  return { ...actual, login: vi.fn(), register: vi.fn(), logoutUser: vi.fn() };
 });
 
-import { login, register, ApiError } from '../api';
+import { login, register, logoutUser, ApiError } from '../api';
 
 function makeFormEvent(email: string, password: string): React.FormEvent<HTMLFormElement> {
   const form = document.createElement('form');
@@ -89,17 +89,31 @@ describe('useAuth', () => {
     expect(result.current.isVerifying).toBe(false);
   });
 
-  it('logout clears all auth state', async () => {
+  it('logout calls the backend with the current token and clears all auth state', async () => {
     vi.mocked(login).mockResolvedValueOnce({ token: 'tok', user: { id: 1, email: 'a@b.com' } });
+    vi.mocked(logoutUser).mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() => useAuth());
     await act(() => result.current.handleAuth(makeFormEvent('a@b.com', 'pw')));
-    act(() => result.current.logout());
+    await act(() => result.current.logout());
 
+    expect(logoutUser).toHaveBeenCalledWith('tok');
     expect(result.current.token).toBe('');
     expect(result.current.user).toBeNull();
     expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.authError).toBeNull();
+  });
+
+  it('logout clears state even when the backend call fails', async () => {
+    vi.mocked(login).mockResolvedValueOnce({ token: 'tok', user: { id: 1, email: 'a@b.com' } });
+    vi.mocked(logoutUser).mockRejectedValueOnce(new Error('network error'));
+
+    const { result } = renderHook(() => useAuth());
+    await act(() => result.current.handleAuth(makeFormEvent('a@b.com', 'pw')));
+    await act(() => result.current.logout());
+
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.token).toBe('');
   });
 
   it('toggleMode flips isRegistering and clears authError', async () => {
