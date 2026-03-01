@@ -16,3 +16,15 @@ export const transcriptions = pgTable("transcriptions", {
 }, (table) => [
   index("transcriptions_user_id_created_at_idx").on(table.userId, table.createdAt),
 ]);
+
+export const refreshTokens = pgTable("refresh_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("refresh_tokens_user_id_idx").on(table.userId),
+]);

@@ -4,14 +4,19 @@ import { z } from "zod";
 import validator from "validator";
 import { config } from "../config.js";
 import { authLimiter } from "../context.js";
-import { authMiddleware } from "../middleware/auth.js";
-import { login, register } from "../services/auth.js";
+import { authMiddleware, userAuthMiddleware } from "../middleware/auth.js";
+import type { AuthRequest } from "../middleware/auth.js";
+import { login, register, refreshAccessToken, logout } from "../services/auth.js";
 
 const router = Router();
 
 const authSchema = z.object({
   email: z.string().email().transform(val => validator.normalizeEmail(val) || val),
   password: z.string().min(8).max(100),
+});
+
+const refreshSchema = z.object({
+  refreshToken: z.string().min(1),
 });
 
 router.post("/auth/register", authLimiter, async (req: Request, res: Response) => {
@@ -49,6 +54,31 @@ router.post("/auth/login", authLimiter, async (req: Request, res: Response) => {
     return res.json(result);
   } catch (err: unknown) {
     console.error("Login error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/auth/refresh", authLimiter, async (req: Request, res: Response) => {
+  const validation = refreshSchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ error: "refreshToken is required" });
+  }
+  try {
+    const result = await refreshAccessToken(validation.data.refreshToken);
+    if (!result) return res.status(401).json({ error: "Invalid or expired refresh token" });
+    return res.json(result);
+  } catch (err: unknown) {
+    console.error("Refresh error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/auth/logout", userAuthMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    await logout(req.userId!);
+    return res.json({ ok: true });
+  } catch (err: unknown) {
+    console.error("Logout error:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });

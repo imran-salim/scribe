@@ -12,5 +12,5 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL,
   },
-  tablesFilter: ["users", "transcriptions"],
+  tablesFilter: ["users", "transcriptions", "refresh_tokens"],
 });

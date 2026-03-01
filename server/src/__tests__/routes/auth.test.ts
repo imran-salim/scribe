@@ -11,18 +11,24 @@ vi.mock("../../context.js", () => ({
   authLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
-// Bypass app-password check for /verify
+// Bypass app-password check for /verify; inject userId for /auth/logout
 vi.mock("../../middleware/auth.js", () => ({
   authMiddleware: (_req: unknown, _res: unknown, next: () => void) => next(),
+  userAuthMiddleware: (req: Record<string, unknown>, _res: unknown, next: () => void) => {
+    req.userId = 1;
+    next();
+  },
 }));
 
 vi.mock("../../services/auth.js", () => ({
   login: vi.fn(),
   register: vi.fn(),
+  refreshAccessToken: vi.fn(),
+  logout: vi.fn(),
 }));
 
 import authRouter from "../../routes/auth.js";
-import { login, register } from "../../services/auth.js";
+import { login, register, refreshAccessToken, logout } from "../../services/auth.js";
 
 function createApp() {
   const app = express();
@@ -58,12 +64,20 @@ describe("POST /auth/login", () => {
   });
 
   it("returns 200 with a token and user on success", async () => {
-    vi.mocked(login).mockResolvedValue({ token: "jwt-token", user: { id: 1, email: "user@example.com" } });
+    vi.mocked(login).mockResolvedValue({
+      token: "jwt-token",
+      refreshToken: "raw-refresh-token",
+      user: { id: 1, email: "user@example.com" },
+    });
     const res = await request(createApp())
       .post("/auth/login")
       .send({ email: "user@example.com", password: "password123" });
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ token: "jwt-token", user: { id: 1, email: "user@example.com" } });
+    expect(res.body).toEqual({
+      token: "jwt-token",
+      refreshToken: "raw-refresh-token",
+      user: { id: 1, email: "user@example.com" },
+    });
   });
 
   it("returns 500 and hides details when the service throws", async () => {
@@ -91,6 +105,78 @@ describe("POST /auth/register", () => {
       .post("/auth/register")
       .send({ email: "new@example.com", password: "password123" });
     expect(res.status).toBe(403);
+  });
+});
+
+describe("POST /auth/refresh", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("returns 400 when body has no refreshToken", async () => {
+    const res = await request(createApp())
+      .post("/auth/refresh")
+      .send({});
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: "refreshToken is required" });
+  });
+
+  it("returns 401 when service returns null", async () => {
+    vi.mocked(refreshAccessToken).mockResolvedValue(null);
+    const res = await request(createApp())
+      .post("/auth/refresh")
+      .send({ refreshToken: "old-token" });
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: "Invalid or expired refresh token" });
+  });
+
+  it("returns 200 with token and refreshToken on success", async () => {
+    vi.mocked(refreshAccessToken).mockResolvedValue({
+      token: "new-jwt-token",
+      refreshToken: "new-refresh-token",
+    });
+    const res = await request(createApp())
+      .post("/auth/refresh")
+      .send({ refreshToken: "old-token" });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ token: "new-jwt-token", refreshToken: "new-refresh-token" });
+  });
+
+  it("passes the raw token string to the service", async () => {
+    vi.mocked(refreshAccessToken).mockResolvedValue(null);
+    await request(createApp())
+      .post("/auth/refresh")
+      .send({ refreshToken: "my-raw-token" });
+    expect(refreshAccessToken).toHaveBeenCalledWith("my-raw-token");
+  });
+
+  it("returns 500 when service throws", async () => {
+    vi.mocked(refreshAccessToken).mockRejectedValue(new Error("db error"));
+    const res = await request(createApp())
+      .post("/auth/refresh")
+      .send({ refreshToken: "old-token" });
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: "Internal server error" });
+  });
+});
+
+describe("POST /auth/logout", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("returns 200 with ok: true on success", async () => {
+    vi.mocked(logout).mockResolvedValue(undefined);
+    const res = await request(createApp())
+      .post("/auth/logout")
+      .set("Authorization", "Bearer some-jwt");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true });
+  });
+
+  it("returns 500 when service throws", async () => {
+    vi.mocked(logout).mockRejectedValue(new Error("db error"));
+    const res = await request(createApp())
+      .post("/auth/logout")
+      .set("Authorization", "Bearer some-jwt");
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: "Internal server error" });
   });
 });
 
