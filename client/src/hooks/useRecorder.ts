@@ -1,0 +1,104 @@
+import { useState, useCallback, useEffect, useRef } from "react";
+import { ApiError, transcribeAudio } from "../api";
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+function pickMimeType(): string {
+  if (typeof window === "undefined" || !window.MediaRecorder) return "";
+  const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+  for (const t of candidates) {
+    if (window.MediaRecorder.isTypeSupported(t)) return t;
+  }
+  return "";
+}
+
+export const MIME_TYPE = pickMimeType();
+
+export function useRecorder(
+  token: string,
+  onUnauthorized: () => void,
+  onTranscribed: () => void,
+) {
+  const [recording, setRecording] = useState<boolean>(false);
+  const [transcript, setTranscript] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+
+  const chunksRef = useRef<BlobPart[]>([]);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+
+  // Refs keep callbacks stable so start() doesn't need them as deps.
+  const onUnauthorizedRef = useRef(onUnauthorized);
+  const onTranscribedRef = useRef(onTranscribed);
+  onUnauthorizedRef.current = onUnauthorized;
+  onTranscribedRef.current = onTranscribed;
+
+  useEffect(() => {
+    return () => {
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    };
+  }, [audioUrl]);
+
+  const start = useCallback(async () => {
+    setError(null);
+    setTranscript("");
+    setAudioUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(stream, MIME_TYPE ? { mimeType: MIME_TYPE } : undefined);
+
+      recorderRef.current = rec;
+      chunksRef.current = [];
+
+      rec.ondataavailable = (e: BlobEvent) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      rec.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+
+        const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
+        setAudioUrl(URL.createObjectURL(blob));
+
+        try {
+          const data = await transcribeAudio(blob, token);
+          setTranscript(data.text);
+          onTranscribedRef.current();
+        } catch (e: unknown) {
+          if (e instanceof ApiError && e.status === 401) onUnauthorizedRef.current();
+          setError(getErrorMessage(e));
+        }
+      };
+
+      rec.start();
+      setRecording(true);
+    } catch (e: unknown) {
+      setError(getErrorMessage(e));
+    }
+  }, [token]);
+
+  const stop = useCallback(() => {
+    if (recorderRef.current && recorderRef.current.state !== "inactive") {
+      recorderRef.current.stop();
+      setRecording(false);
+    }
+  }, []);
+
+  const reset = useCallback(() => {
+    setTranscript("");
+    setError(null);
+    setAudioUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  }, []);
+
+  return { recording, transcript, error, audioUrl, start, stop, reset };
+}
