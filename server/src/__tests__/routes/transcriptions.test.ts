@@ -106,7 +106,11 @@ describe("POST /transcribe", () => {
       next();
     });
     vi.mocked(transcribe).mockRejectedValue(
-      Object.assign(new Error("bad request"), { status: 400, name: "APIError" }),
+      Object.assign(Object.create(APIError.prototype) as InstanceType<typeof APIError>, {
+        message: "bad request",
+        status: 400,
+        name: "APIError",
+      }),
     );
 
     const res = await request(createApp()).post("/transcribe");
