@@ -6,8 +6,10 @@ export type { User } from "./types";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export class ApiError extends Error {
-  constructor(message: string, public readonly status: number) {
+  readonly status: number;
+  constructor(message: string, status: number) {
     super(message);
+    this.status = status;
   }
 }
 
