@@ -12,7 +12,7 @@ type Config = {
 
 export const config: Config = {
   openaiApiKey: process.env.OPENAI_API_KEY ?? "",
-  allowedOrigins: process.env.ALLOWED_ORIGINS?.split(",") ?? true,
+  allowedOrigins: process.env.ALLOWED_ORIGINS?.split(",").map(o => o.trim()) ?? true,
   openaiTranscribeModel: process.env.OPENAI_TRANSCRIBE_MODEL ?? "gpt-4o-mini-transcribe",
   port: Number(process.env.PORT ?? 8000),
   appPassword: process.env.APP_PASSWORD,
