@@ -12,15 +12,11 @@ export async function transcribe(file: Express.Multer.File, userId: number): Pro
     model: config.openaiTranscribeModel,
   });
 
-  try {
-    await db.insert(transcriptions).values({
-      userId,
-      text: resp.text,
-      filename: file.originalname,
-    });
-  } catch (dbErr) {
-    console.error("Database save error:", dbErr);
-  }
+  await db.insert(transcriptions).values({
+    userId,
+    text: resp.text,
+    filename: file.originalname,
+  });
 
   return resp.text;
 }

@@ -79,12 +79,12 @@ describe("transcribe", () => {
     );
   });
 
-  it("still returns the text when the DB insert fails", async () => {
+  it("throws when the DB insert fails", async () => {
     vi.mocked(toFile).mockResolvedValue("audio-file" as never);
     vi.mocked(openai.audio.transcriptions.create).mockResolvedValue({ text: "Hello" } as never);
     vi.mocked(db.insert).mockReturnValue(makeInsertChain(true) as never);
 
-    expect(await transcribe(makeFile(), 1)).toBe("Hello");
+    await expect(transcribe(makeFile(), 1)).rejects.toThrow("DB error");
   });
 
   it("passes the file buffer and mimetype to toFile", async () => {
