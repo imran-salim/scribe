@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, login, register, fetchTranscriptions, transcribeAudio } from "./api";
 import type { HistoryItem, User } from "./types";
+import AuthForm from "./components/AuthForm";
+import RecorderPanel from "./components/RecorderPanel";
+import HistorySidebar from "./components/HistorySidebar";
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -10,7 +13,6 @@ function getErrorMessage(error: unknown): string {
 function pickMimeType(): string {
   if (typeof window === "undefined" || !window.MediaRecorder) return "";
   const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
-
   for (const t of candidates) {
     if (window.MediaRecorder.isTypeSupported(t)) return t;
   }
@@ -53,7 +55,7 @@ export default function App() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const INACTIVITY_LIMIT = 2 * 60 * 1000; // 2 minutes
+    const INACTIVITY_LIMIT = 2 * 60 * 1000;
     let timeoutId: number;
 
     const resetTimer = () => {
@@ -65,25 +67,18 @@ export default function App() {
     };
 
     const activityEvents = ["mousedown", "mousemove", "keydown", "scroll", "touchstart"];
-    activityEvents.forEach((event) => {
-      window.addEventListener(event, resetTimer);
-    });
-
+    activityEvents.forEach((event) => window.addEventListener(event, resetTimer));
     resetTimer();
 
     return () => {
       window.clearTimeout(timeoutId);
-      activityEvents.forEach((event) => {
-        window.removeEventListener(event, resetTimer);
-      });
+      activityEvents.forEach((event) => window.removeEventListener(event, resetTimer));
     };
   }, [isAuthenticated]);
 
   useEffect(() => {
     return () => {
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
-      }
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
     };
   }, [audioUrl]);
 
@@ -95,7 +90,7 @@ export default function App() {
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    
+
     try {
       const data = await (isRegistering ? register : login)(email, password);
       setToken(data.token);
@@ -148,9 +143,7 @@ export default function App() {
       rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
 
-        const blob = new Blob(chunksRef.current, {
-          type: rec.mimeType || "audio/webm",
-        });
+        const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
 
@@ -180,167 +173,34 @@ export default function App() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white shadow-xl rounded-2xl p-8 text-center">
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-8">Scribe</h1>
-            <h2 className="text-xl font-bold text-gray-700 mb-6">
-              {isRegistering ? "Create an account" : "Sign in"}
-            </h2>
-          {/* <h2 className="text-xl font-bold text-gray-700 mb-6">
-            {"Sign in"}
-          </h2>  */}
-          <form onSubmit={handleAuth} className="space-y-4">
-            <div>
-              <input
-                type="email"
-                name="email"
-                placeholder="Email address"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
-                required
-                disabled={isVerifying}
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
-                required
-                disabled={isVerifying}
-              />
-            </div>
-            {authError && (
-              <p className="text-red-500 text-sm font-medium">{authError}</p>
-            )}
-            <button
-              type="submit"
-              disabled={isVerifying}
-              className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isVerifying ? "Processing..." : isRegistering ? "Register" : "Sign In"}
-              {/* {isVerifying ? "Processing..." : "Sign In"} */}
-            </button>
-          </form>
-          
-          
-          <button
-            onClick={() => {
-              setIsRegistering(!isRegistering);
-              setAuthError(null);
-            }}
-            className="mt-6 text-sm text-emerald-600 hover:underline font-medium"
-          >
-            {isRegistering ? "Already have an account? Sign in" : "Need an account? Register"}
-          </button>
-         
-
-          <div className="mt-6 text-sm text-gray-400 font-medium">
-            Registration is currently disabled.
-          </div>
-
-          <p className="mt-8 text-sm text-gray-500">
-            For support, contact{" "}
-            <a href="mailto:narmilas@proton.me" className="text-emerald-600 hover:underline font-medium">
-              narmilas@proton.me
-            </a>
-          </p>
-        </div>
-      </div>
+      <AuthForm
+        isRegistering={isRegistering}
+        isVerifying={isVerifying}
+        authError={authError}
+        onSubmit={handleAuth}
+        onToggleMode={() => {
+          setIsRegistering(!isRegistering);
+          setAuthError(null);
+        }}
+      />
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 md:p-8">
       <div className="max-w-4xl w-full flex flex-col md:flex-row gap-8">
-        {/* Main Recorder Section */}
-        <div className="flex-1 bg-white shadow-xl rounded-2xl p-8 text-center relative h-fit">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-extrabold text-gray-900">Scribe</h1>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-500 hidden sm:inline">{user?.email}</span>
-              <button 
-                onClick={handleLogout}
-                className="text-gray-400 hover:text-gray-600 text-sm font-medium"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-
-          <div className="flex gap-4 mb-8 justify-center">
-            <button
-              onClick={start}
-              disabled={recording}
-              className="px-6 py-3 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-emerald-200"
-            >
-              Start Recording
-            </button>
-            <button
-              onClick={stop}
-              disabled={!recording}
-              className="px-6 py-3 bg-red-700 text-white rounded-full font-bold hover:bg-red-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-red-300"
-            >
-              Stop & Transcribe
-            </button>
-          </div>
-
-          {recording && (
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-              </span>
-              <span className="text-red-600 font-bold animate-pulse">Recording...</span>
-            </div>
-          )}
-
-          {audioUrl && (
-            <div className="mb-8 space-y-2">
-              <audio controls src={audioUrl} className="mx-auto w-full" />
-              <div className="text-xs text-gray-400">
-                Format: {MIME_TYPE || "browser default"}
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm text-left">
-              <p className="font-bold mb-1">Error:</p>
-              <pre className="whitespace-pre-wrap font-mono">{error}</pre>
-            </div>
-          )}
-
-          <div className="text-left">
-            <h2 className="text-xl font-bold text-gray-800 mb-3">Current Transcript</h2>
-            <div className="bg-gray-50 border border-gray-100 p-6 rounded-xl min-h-[150px]">
-              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                {transcript || <span className="text-gray-400 italic">No transcript available yet. Start recording to see results.</span>}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* History Sidebar */}
-        <div className="w-full md:w-80 bg-white shadow-xl rounded-2xl p-6 h-fit max-h-[80vh] overflow-y-auto">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">History</h2>
-          {history.length === 0 ? (
-            <p className="text-gray-400 text-sm italic">No past transcriptions found.</p>
-          ) : (
-            <div className="space-y-4">
-              {history.map((item) => (
-                <div key={item.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                  <p className="text-xs text-gray-400 mb-1">
-                    {new Date(item.createdAt).toLocaleString()}
-                  </p>
-                  <p className="text-sm text-gray-700 line-clamp-3">
-                    {item.text}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <RecorderPanel
+          user={user}
+          onLogout={handleLogout}
+          recording={recording}
+          onStart={start}
+          onStop={stop}
+          audioUrl={audioUrl}
+          mimeType={MIME_TYPE}
+          error={error}
+          transcript={transcript}
+        />
+        <HistorySidebar history={history} />
       </div>
 
       <p className="mt-12 text-sm text-gray-500">
