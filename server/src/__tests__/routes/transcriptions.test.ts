@@ -77,8 +77,8 @@ describe("POST /transcribe", () => {
   });
 
   it("returns 400 for an unsupported mimetype", async () => {
-    uploadMiddleware.mockImplementation((req: Record<string, unknown>, _res: unknown, next: () => void) => {
-      req.file = makeFilePayload({ mimetype: "video/mp4" });
+    uploadMiddleware.mockImplementation((req: unknown, _res: unknown, next: () => void) => {
+      (req as Record<string, unknown>).file = makeFilePayload({ mimetype: "video/mp4" });
       next();
     });
     const res = await request(createApp()).post("/transcribe");
@@ -88,8 +88,8 @@ describe("POST /transcribe", () => {
   });
 
   it("returns 200 with the transcribed text on success", async () => {
-    uploadMiddleware.mockImplementation((req: Record<string, unknown>, _res: unknown, next: () => void) => {
-      req.file = makeFilePayload();
+    uploadMiddleware.mockImplementation((req: unknown, _res: unknown, next: () => void) => {
+      (req as Record<string, unknown>).file = makeFilePayload();
       next();
     });
     vi.mocked(transcribe).mockResolvedValue("Hello world");
@@ -101,19 +101,21 @@ describe("POST /transcribe", () => {
   });
 
   it("forwards the APIError status from OpenAI", async () => {
-    uploadMiddleware.mockImplementation((req: Record<string, unknown>, _res: unknown, next: () => void) => {
-      req.file = makeFilePayload();
+    uploadMiddleware.mockImplementation((req: unknown, _res: unknown, next: () => void) => {
+      (req as Record<string, unknown>).file = makeFilePayload();
       next();
     });
-    vi.mocked(transcribe).mockRejectedValue(new APIError("bad request", 400));
+    vi.mocked(transcribe).mockRejectedValue(
+      Object.assign(new Error("bad request"), { status: 400, name: "APIError" }),
+    );
 
     const res = await request(createApp()).post("/transcribe");
     expect(res.status).toBe(400);
   });
 
   it("returns 500 for a generic service error", async () => {
-    uploadMiddleware.mockImplementation((req: Record<string, unknown>, _res: unknown, next: () => void) => {
-      req.file = makeFilePayload();
+    uploadMiddleware.mockImplementation((req: unknown, _res: unknown, next: () => void) => {
+      (req as Record<string, unknown>).file = makeFilePayload();
       next();
     });
     vi.mocked(transcribe).mockRejectedValue(new Error("unexpected"));
