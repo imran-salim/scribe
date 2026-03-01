@@ -5,7 +5,7 @@ services:
     plan: free
     rootDir: server
     buildCommand: npm install && npm run build
-    startCommand: npm run db:push && npm run start
+    startCommand: npm run db:migrate && npm run start
     envVars:
       - key: DATABASE_URL
         fromDatabase:
