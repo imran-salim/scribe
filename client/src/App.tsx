@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect } from "react";
 import { useAuth } from "./hooks/useAuth";
 import { useHistory } from "./hooks/useHistory";
 import { useRecorder, MIME_TYPE } from "./hooks/useRecorder";
@@ -10,22 +10,19 @@ import HistorySidebar from "./components/HistorySidebar";
 export default function App() {
   const auth = useAuth();
   const history = useHistory(auth.token, auth.isAuthenticated);
+  const recorder = useRecorder(auth.token, auth.logout, history.refresh);
 
-  // Break the circular dep: useRecorder needs to call handleLogout on 401,
-  // but handleLogout calls recorder.reset(). A ref lets useRecorder always
-  // call the latest handleLogout without it being a hook dep.
-  const handleLogoutRef = useRef<() => void>(() => {});
-  const recorder = useRecorder(auth.token, () => handleLogoutRef.current(), history.refresh);
-
-  const handleLogout = () => {
-    auth.logout();
-    recorder.reset();
-    history.reset();
-  };
-  handleLogoutRef.current = handleLogout;
+  // Reset transient recorder and history state whenever the user is no longer
+  // authenticated (covers logout, inactivity timeout, and 401 mid-session).
+  useEffect(() => {
+    if (!auth.isAuthenticated) {
+      recorder.reset();
+      history.reset();
+    }
+  }, [auth.isAuthenticated, recorder.reset, history.reset]);
 
   useInactivityTimer(auth.isAuthenticated, () => {
-    handleLogout();
+    auth.logout();
     alert("You have been logged out due to inactivity.");
   });
 
@@ -46,7 +43,7 @@ export default function App() {
       <div className="max-w-4xl w-full flex flex-col md:flex-row gap-8">
         <RecorderPanel
           user={auth.user}
-          onLogout={handleLogout}
+          onLogout={auth.logout}
           recording={recorder.recording}
           onStart={recorder.start}
           onStop={recorder.stop}
