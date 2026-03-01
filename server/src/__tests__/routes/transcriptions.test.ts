@@ -13,6 +13,7 @@ vi.mock("../../config.js", () => ({
 
 vi.mock("../../context.js", () => ({
   upload: { single: () => uploadMiddleware },
+  transcribeLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
 // Bypass JWT verification — inject a fixed userId for all tests

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { Response } from "express";
 import { APIError } from "openai";
-import { upload } from "../context.js";
+import { upload, transcribeLimiter } from "../context.js";
 import { type AuthRequest, userAuthMiddleware } from "../middleware/auth.js";
 import { transcribe, getUserTranscriptions } from "../services/transcription.js";
 
@@ -19,7 +19,7 @@ const allowedMime = new Set([
   "audio/m4a",
 ]);
 
-router.post("/transcribe", userAuthMiddleware, upload.single("audio"), async (req: AuthRequest, res: Response) => {
+router.post("/transcribe", transcribeLimiter, userAuthMiddleware, upload.single("audio"), async (req: AuthRequest, res: Response) => {
   const file = req.file;
   if (!file) {
     return res.status(400).json({ error: "No file uploaded (field: audio)" });

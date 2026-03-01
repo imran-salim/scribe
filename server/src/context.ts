@@ -28,3 +28,11 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many authentication attempts, please try again in 15 minutes." },
 });
+
+export const transcribeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20, // Max 20 transcriptions per 15 minutes per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many transcription requests, please try again later." },
+});
