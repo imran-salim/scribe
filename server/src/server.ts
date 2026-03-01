@@ -29,7 +29,7 @@ const corsOptions = {
       || (Array.isArray(config.allowedOrigins) && config.allowedOrigins.includes(requestOrigin))
       || config.allowedOrigins === requestOrigin;
       
-    if (allowed || requestOrigin?.includes("vercel.app")) {
+    if (allowed) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));

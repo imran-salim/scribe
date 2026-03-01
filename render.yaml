@@ -16,7 +16,7 @@ services:
       - key: APP_PASSWORD
         sync: false
       - key: ALLOWED_ORIGINS
-        value: "*"
+        value: "https://scribe-eight-mauve.vercel.app"
 
 databases:
   - name: scribe-db
