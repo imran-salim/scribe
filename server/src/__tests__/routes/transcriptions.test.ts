@@ -133,14 +133,35 @@ describe("POST /transcribe", () => {
 describe("GET /transcriptions", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("returns the authenticated user's transcriptions", async () => {
+  it("returns the authenticated user's transcriptions with default pagination", async () => {
     const rows = [{ id: 1, userId: 42, text: "Hello", filename: "a.webm", createdAt: new Date().toISOString() }];
     vi.mocked(getUserTranscriptions).mockResolvedValue(rows as never);
 
     const res = await request(createApp()).get("/transcriptions");
     expect(res.status).toBe(200);
     expect(res.body).toEqual(rows);
-    expect(getUserTranscriptions).toHaveBeenCalledWith(42);
+    expect(getUserTranscriptions).toHaveBeenCalledWith(42, 50, 0);
+  });
+
+  it("passes limit and offset query params to the service", async () => {
+    vi.mocked(getUserTranscriptions).mockResolvedValue([]);
+
+    await request(createApp()).get("/transcriptions?limit=10&offset=20");
+    expect(getUserTranscriptions).toHaveBeenCalledWith(42, 10, 20);
+  });
+
+  it("clamps limit to a maximum of 100", async () => {
+    vi.mocked(getUserTranscriptions).mockResolvedValue([]);
+
+    await request(createApp()).get("/transcriptions?limit=999");
+    expect(getUserTranscriptions).toHaveBeenCalledWith(42, 100, 0);
+  });
+
+  it("falls back to defaults for invalid query params", async () => {
+    vi.mocked(getUserTranscriptions).mockResolvedValue([]);
+
+    await request(createApp()).get("/transcriptions?limit=abc&offset=xyz");
+    expect(getUserTranscriptions).toHaveBeenCalledWith(42, 50, 0);
   });
 
   it("returns an empty array when the user has no transcriptions", async () => {

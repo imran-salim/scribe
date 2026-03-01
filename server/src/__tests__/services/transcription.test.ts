@@ -42,9 +42,12 @@ function makeFile(overrides: Partial<Express.Multer.File> = {}): Express.Multer.
   } as Express.Multer.File;
 }
 
-// Drizzle select chain: db.select().from().where()  (resolves at .where())
+// Drizzle select chain: db.select().from().where().orderBy().limit().offset()
 function makeSelectChain(rows: unknown[]) {
-  const where = vi.fn().mockResolvedValue(rows);
+  const offset = vi.fn().mockResolvedValue(rows);
+  const limit = vi.fn().mockReturnValue({ offset });
+  const orderBy = vi.fn().mockReturnValue({ limit });
+  const where = vi.fn().mockReturnValue({ orderBy });
   const from = vi.fn().mockReturnValue({ where });
   return { from };
 }
@@ -112,5 +115,19 @@ describe("getUserTranscriptions", () => {
     vi.mocked(db.select).mockReturnValue(makeSelectChain([]) as never);
 
     expect(await getUserTranscriptions(99)).toEqual([]);
+  });
+
+  it("passes limit and offset to the query", async () => {
+    const offsetSpy = vi.fn().mockResolvedValue([]);
+    const limitSpy = vi.fn().mockReturnValue({ offset: offsetSpy });
+    const orderBy = vi.fn().mockReturnValue({ limit: limitSpy });
+    const where = vi.fn().mockReturnValue({ orderBy });
+    const from = vi.fn().mockReturnValue({ where });
+    vi.mocked(db.select).mockReturnValue({ from } as never);
+
+    await getUserTranscriptions(42, 10, 20);
+
+    expect(limitSpy).toHaveBeenCalledWith(10);
+    expect(offsetSpy).toHaveBeenCalledWith(20);
   });
 });

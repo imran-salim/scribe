@@ -1,5 +1,5 @@
 import { toFile } from "openai";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { transcriptions } from "../db/schema.js";
 import { config } from "../config.js";
@@ -21,6 +21,12 @@ export async function transcribe(file: Express.Multer.File, userId: number): Pro
   return resp.text;
 }
 
-export async function getUserTranscriptions(userId: number) {
-  return db.select().from(transcriptions).where(eq(transcriptions.userId, userId));
+export async function getUserTranscriptions(userId: number, limit = 50, offset = 0) {
+  return db
+    .select()
+    .from(transcriptions)
+    .where(eq(transcriptions.userId, userId))
+    .orderBy(desc(transcriptions.createdAt))
+    .limit(limit)
+    .offset(offset);
 }

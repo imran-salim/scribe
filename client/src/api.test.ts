@@ -97,7 +97,7 @@ describe('fetchTranscriptions', () => {
     const result = await fetchTranscriptions('my-token');
 
     expect(result).toEqual(history);
-    expect(fetch).toHaveBeenCalledWith(`${BASE}/transcriptions`, {
+    expect(fetch).toHaveBeenCalledWith(`${BASE}/transcriptions?limit=50&offset=0`, {
       headers: { Authorization: 'Bearer my-token' },
     });
   });

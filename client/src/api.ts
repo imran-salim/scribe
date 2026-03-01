@@ -42,8 +42,8 @@ export async function logoutUser(token: string): Promise<void> {
   });
 }
 
-export async function fetchTranscriptions(token: string): Promise<HistoryItem[]> {
-  const res = await fetch(`${BASE}/transcriptions`, {
+export async function fetchTranscriptions(token: string, limit = 50, offset = 0): Promise<HistoryItem[]> {
+  const res = await fetch(`${BASE}/transcriptions?limit=${limit}&offset=${offset}`, {
     headers: { "Authorization": `Bearer ${token}` },
   });
   if (!res.ok) throw new ApiError(`HTTP ${res.status}`, res.status);

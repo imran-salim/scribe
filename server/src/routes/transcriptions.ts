@@ -53,8 +53,11 @@ router.post("/transcribe", transcribeLimiter, userAuthMiddleware, upload.single(
 });
 
 router.get("/transcriptions", userAuthMiddleware, async (req: AuthRequest, res: Response) => {
+  const limit = Math.min(Math.max(1, parseInt(req.query.limit as string, 10) || 50), 100);
+  const offset = Math.max(0, parseInt(req.query.offset as string, 10) || 0);
+
   try {
-    const results = await getUserTranscriptions(req.userId!);
+    const results = await getUserTranscriptions(req.userId!, limit, offset);
     return res.json(results);
   } catch (err) {
     console.error("Fetch transcriptions error:", err);
