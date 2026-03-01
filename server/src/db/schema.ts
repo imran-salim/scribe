@@ -9,7 +9,7 @@ export const users = pgTable("users", {
 
 export const transcriptions = pgTable("transcriptions", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   text: text("text").notNull(),
   filename: text("filename"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
