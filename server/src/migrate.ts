@@ -21,10 +21,12 @@ async function runMigrations() {
   });
 
   try {
-    // Before running Drizzle's migrate(), ensure the migration tracking table is in
-    // sync with reality. If the schema already exists but drizzle.__drizzle_migrations
-    // is empty (e.g. DB was provisioned separately or a previous deploy failed partway),
-    // seed the tracking table so migrate() won't try to re-run already-applied migrations.
+    // Before running Drizzle's migrate(), synchronise the migration tracking table
+    // with what is actually present in the DB. Two cases are handled per migration entry:
+    //   1. Tables exist but entry is NOT tracked → seed it (so migrate() won't re-run it)
+    //   2. Entry IS tracked but its tables are missing → remove it (so migrate() will run it)
+    // This correctly handles both a fresh DB, a fully-migrated DB with lost tracking,
+    // and a partially-migrated DB where later migrations were incorrectly pre-seeded.
     const client = await pool.connect();
     try {
       const { rows } = await client.query(`
@@ -43,26 +45,57 @@ async function runMigrations() {
             created_at bigint
           )
         `);
-        const { rows: existing } = await client.query(
-          `SELECT id FROM drizzle.__drizzle_migrations LIMIT 1`
+
+        const migrationsDir = path.join(__dirname, "..", "drizzle");
+        const journal: { entries: { tag: string; when: number }[] } = JSON.parse(
+          fs.readFileSync(path.join(migrationsDir, "meta/_journal.json"), "utf8")
         );
-        if (existing.length === 0) {
-          const migrationsDir = path.join(__dirname, "..", "drizzle");
-          const journal: { entries: { tag: string; when: number }[] } = JSON.parse(
-            fs.readFileSync(path.join(migrationsDir, "meta/_journal.json"), "utf8")
+
+        for (const entry of journal.entries) {
+          const sql = fs.readFileSync(
+            path.join(migrationsDir, `${entry.tag}.sql`),
+            "utf8"
           );
-          for (const entry of journal.entries) {
-            const sql = fs.readFileSync(
-              path.join(migrationsDir, `${entry.tag}.sql`),
-              "utf8"
+          const hash = crypto.createHash("sha256").update(sql).digest("hex");
+
+          // Find all tables this migration creates.
+          const createdTables = [...sql.matchAll(/CREATE TABLE "(\w+)"/g)].map(m => m[1]);
+
+          // Check whether all of those tables currently exist.
+          let allTablesExist = true;
+          for (const table of createdTables) {
+            const { rows: tableCheck } = await client.query(
+              `SELECT EXISTS (
+                SELECT FROM information_schema.tables
+                WHERE table_schema = 'public' AND table_name = $1
+              ) AS "exists"`,
+              [table]
             );
-            const hash = crypto.createHash("sha256").update(sql).digest("hex");
+            if (!tableCheck[0].exists) {
+              allTablesExist = false;
+              break;
+            }
+          }
+
+          const { rows: tracked } = await client.query(
+            `SELECT id FROM drizzle.__drizzle_migrations WHERE hash = $1`,
+            [hash]
+          );
+          const isTracked = tracked.length > 0;
+
+          if (allTablesExist && !isTracked) {
             await client.query(
               `INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ($1, $2)`,
               [hash, entry.when]
             );
+            console.log(`Migration tracking seeded for ${entry.tag} (tables already exist).`);
+          } else if (!allTablesExist && isTracked) {
+            await client.query(
+              `DELETE FROM drizzle.__drizzle_migrations WHERE hash = $1`,
+              [hash]
+            );
+            console.log(`Removed stale tracking for ${entry.tag} (tables missing — will apply now).`);
           }
-          console.log("Migration tracking seeded: existing schema recognised.");
         }
       }
     } finally {
