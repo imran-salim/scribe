@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { jwt } from "zod";
 
 type Config = {
   openaiApiKey: string;
