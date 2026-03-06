@@ -46,7 +46,7 @@ async function runMigrations() {
           )
         `);
 
-        const migrationsDir = path.join(__dirname, "..", "drizzle");
+        const migrationsDir = path.join(__dirname, "..", "..", "drizzle");
         const journal: { entries: { tag: string; when: number }[] } = JSON.parse(
           fs.readFileSync(path.join(migrationsDir, "meta/_journal.json"), "utf8")
         );
@@ -103,7 +103,7 @@ async function runMigrations() {
     }
 
     const db = drizzle(pool);
-    await migrate(db, { migrationsFolder: path.join(__dirname, "..", "drizzle") });
+    await migrate(db, { migrationsFolder: path.join(__dirname, "..", "..", "drizzle") });
     console.log("Migrations applied.");
   } finally {
     await pool.end();
