@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { User } from "../types";
 
 type Props = {
@@ -13,6 +14,15 @@ type Props = {
 };
 
 export default function RecorderPanel({ user, onLogout, recording, onStart, onStop, audioUrl, mimeType, error, transcript }: Props) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(transcript).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
   return (
     <div className="flex-1 bg-white shadow-xl rounded-2xl p-8 text-center relative h-fit">
       <div className="flex justify-between items-center mb-8">
@@ -72,7 +82,18 @@ export default function RecorderPanel({ user, onLogout, recording, onStart, onSt
       )}
 
       <div className="text-left">
-        <h2 className="text-xl font-bold text-gray-800 mb-3">Current Transcript</h2>
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-xl font-bold text-gray-800">Current Transcript</h2>
+          {transcript && (
+            <button
+              onClick={handleCopy}
+              className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+              title="Copy to clipboard"
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          )}
+        </div>
         <div className="bg-gray-50 border border-gray-100 p-6 rounded-xl min-h-[150px]">
           <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
             {transcript || <span className="text-gray-400 italic">No transcript available yet. Start recording to see results.</span>}
