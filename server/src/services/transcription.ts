@@ -12,11 +12,13 @@ export async function transcribe(file: Express.Multer.File, userId: number): Pro
     model: config.openaiTranscribeModel,
   });
 
-  await db.insert(transcriptions).values({
-    userId,
-    text: resp.text,
-    filename: file.originalname,
-  });
+  if (resp.text.trim()) {
+    await db.insert(transcriptions).values({
+      userId,
+      text: resp.text,
+      filename: file.originalname,
+    });
+  }
 
   return resp.text;
 }
