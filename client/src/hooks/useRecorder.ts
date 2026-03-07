@@ -29,6 +29,7 @@ export function useRecorder(
 
   const chunksRef = useRef<BlobPart[]>([]);
   const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Refs keep callbacks stable so start() doesn't need them as deps.
   const onUnauthorizedRef = useRef(onUnauthorized);
@@ -55,6 +56,7 @@ export function useRecorder(
       const rec = new MediaRecorder(stream, MIME_TYPE ? { mimeType: MIME_TYPE } : undefined);
 
       recorderRef.current = rec;
+      streamRef.current = stream;
       chunksRef.current = [];
 
       rec.ondataavailable = (e: BlobEvent) => {
@@ -92,6 +94,19 @@ export function useRecorder(
   }, []);
 
   const reset = useCallback(() => {
+    if (recorderRef.current && recorderRef.current.state !== "inactive") {
+      recorderRef.current.onstop = null;
+      recorderRef.current.stop();
+    }
+    recorderRef.current = null;
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+
+    chunksRef.current = [];
+    setRecording(false);
     setTranscript("");
     setError(null);
     setAudioUrl((prev) => {
