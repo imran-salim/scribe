@@ -41,6 +41,7 @@ beforeEach(() => {
 
   vi.mocked(useRecorder).mockReturnValue({
     recording: false,
+    isStarting: false,
     audioUrl: null,
     error: null,
     transcript: '',
