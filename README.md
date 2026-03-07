@@ -7,10 +7,11 @@ A secure, full-stack audio transcription application. Record audio in your brows
 > **Note**: Account registration is currently disabled. Please contact the author at [narmilas@proton.me](mailto:narmilas@proton.me) to request access.
 
 ## Features
-- **User Authentication**: Secure registration and login using JWT and Bcrypt.
+- **User Authentication**: Secure registration and login using JWT and Bcrypt, with silent token refresh so sessions stay alive without re-login.
 - **Transcription History**: Automatically save and browse your past transcriptions.
+- **Copy to Clipboard**: One-click copy on the current transcript and on every item in the history sidebar.
 - **Privacy-First**: Transcriptions are private and associated with your unique user account.
-- **Modern UI**: Clean, responsive interface with a recording dashboard and history sidebar.
+- **Modern UI**: Clean, responsive interface with a recording dashboard and history sidebar. The Start Recording button provides immediate feedback while microphone permission is being requested.
 
 ## Project Structure
 - **/client**: React (Vite) + TypeScript frontend.

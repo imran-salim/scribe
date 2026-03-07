@@ -55,7 +55,9 @@ Tests cover the service layer, middleware, and route handlers. All external depe
 
 ## API Documentation
 - `POST /auth/register`: Create a new account. *(Currently disabled — returns 403.)*
-- `POST /auth/login`: Authenticate and receive a JWT.
+- `POST /auth/login`: Authenticate and receive a JWT and a refresh token.
+- `POST /auth/refresh`: Exchange a valid refresh token for a new access token and refresh token.
+- `POST /auth/logout`: Invalidate the current session (requires JWT).
 - `POST /transcribe`: Upload audio and receive a transcript (requires JWT).
 - `GET /transcriptions`: Retrieve user transcription history (requires JWT).
 

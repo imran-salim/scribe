@@ -3,8 +3,10 @@
 Modern React + TypeScript frontend for high-quality audio recording and transcription.
 
 ## Features
-- **Recording Dashboard**: Real-time audio recording via `MediaRecorder` API.
+- **Recording Dashboard**: Real-time audio recording via `MediaRecorder` API. The Start button is immediately disabled and shows "Starting…" while microphone permission is being requested, preventing duplicate recording sessions.
+- **Copy to Clipboard**: One-click copy button on the current transcript and on every history item.
 - **Authentication**: User-friendly registration and login screens.
+- **Token Refresh**: Access tokens can be silently refreshed via `/auth/refresh` without requiring re-login.
 - **History Sidebar**: Browse and manage your past transcriptions.
 - **Responsive UI**: Optimized for desktop and mobile layouts.
 
@@ -25,7 +27,7 @@ src/
 │   ├── useAuth.ts          # Auth state: token, user, login, logout, toggleMode
 │   ├── useHistory.ts       # Transcription history: fetch, refresh, reset
 │   ├── useInactivityTimer.ts # 2-minute inactivity timeout + cleanup
-│   └── useRecorder.ts      # MediaRecorder lifecycle, audioUrl, transcript, error
+│   └── useRecorder.ts      # MediaRecorder lifecycle, audioUrl, transcript, error, isStarting guard
 ├── components/
 │   ├── AuthForm.tsx         # Login / register card
 │   ├── RecorderPanel.tsx    # Header, record controls, audio player, transcript
