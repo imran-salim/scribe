@@ -3,10 +3,10 @@ type Props = {
   isVerifying: boolean;
   authError: string | null;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  onToggleMode: () => void;
+  // onToggleMode: () => void;
 };
 
-export default function AuthForm({ isRegistering, isVerifying, authError, onSubmit, onToggleMode }: Props) {
+export default function AuthForm({ isRegistering, isVerifying, authError, onSubmit, /*onToggleMode*/ }: Props) {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white shadow-xl rounded-2xl p-8 text-center">
