@@ -20,7 +20,7 @@ afterEach(() => vi.unstubAllGlobals());
 // ---------------------------------------------------------------------------
 describe('login', () => {
   it('returns token and user on success', async () => {
-    const payload = { token: 'tok', user: { id: 1, email: 'a@b.com' } };
+    const payload = { token: 'tok', refreshToken: 'ref-tok', user: { id: 1, email: 'a@b.com' } };
     mockFetch(true, 200, payload);
 
     const result = await login('a@b.com', 'pw');
@@ -58,7 +58,7 @@ describe('login', () => {
 // ---------------------------------------------------------------------------
 describe('register', () => {
   it('returns token and user on success', async () => {
-    const payload = { token: 'tok', user: { id: 2, email: 'new@b.com' } };
+    const payload = { token: 'tok', refreshToken: 'ref-tok', user: { id: 2, email: 'new@b.com' } };
     mockFetch(true, 201, payload);
 
     const result = await register('new@b.com', 'pw');

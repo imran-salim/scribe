@@ -4,7 +4,7 @@ import { useAuth } from './useAuth';
 
 vi.mock('../api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../api')>();
-  return { ...actual, login: vi.fn(), register: vi.fn(), logoutUser: vi.fn() };
+  return { ...actual, login: vi.fn(), register: vi.fn(), logoutUser: vi.fn(), refreshAccessToken: vi.fn() };
 });
 
 import { login, register, logoutUser, ApiError } from '../api';
@@ -37,7 +37,7 @@ describe('useAuth', () => {
   });
 
   it('sets token, user, and isAuthenticated on successful login', async () => {
-    const payload = { token: 'tok', user: { id: 1, email: 'a@b.com' } };
+    const payload = { token: 'tok', refreshToken: 'ref-tok', user: { id: 1, email: 'a@b.com' } };
     vi.mocked(login).mockResolvedValueOnce(payload);
 
     const { result } = renderHook(() => useAuth());
@@ -51,7 +51,7 @@ describe('useAuth', () => {
   });
 
   it('calls register (not login) when isRegistering is true', async () => {
-    vi.mocked(register).mockResolvedValueOnce({ token: 't', user: { id: 2, email: 'n@b.com' } });
+    vi.mocked(register).mockResolvedValueOnce({ token: 't', refreshToken: 'ref-t', user: { id: 2, email: 'n@b.com' } });
 
     const { result } = renderHook(() => useAuth());
     act(() => result.current.toggleMode());
@@ -90,7 +90,7 @@ describe('useAuth', () => {
   });
 
   it('logout calls the backend with the current token and clears all auth state', async () => {
-    vi.mocked(login).mockResolvedValueOnce({ token: 'tok', user: { id: 1, email: 'a@b.com' } });
+    vi.mocked(login).mockResolvedValueOnce({ token: 'tok', refreshToken: 'ref-tok', user: { id: 1, email: 'a@b.com' } });
     vi.mocked(logoutUser).mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() => useAuth());
@@ -105,7 +105,7 @@ describe('useAuth', () => {
   });
 
   it('logout clears state even when the backend call fails', async () => {
-    vi.mocked(login).mockResolvedValueOnce({ token: 'tok', user: { id: 1, email: 'a@b.com' } });
+    vi.mocked(login).mockResolvedValueOnce({ token: 'tok', refreshToken: 'ref-tok', user: { id: 1, email: 'a@b.com' } });
     vi.mocked(logoutUser).mockRejectedValueOnce(new Error('network error'));
 
     const { result } = renderHook(() => useAuth());

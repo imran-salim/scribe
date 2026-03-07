@@ -65,6 +65,8 @@ export function useRecorder(
 
       rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+        recorderRef.current = null;
 
         const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
         setAudioUrl(URL.createObjectURL(blob));
