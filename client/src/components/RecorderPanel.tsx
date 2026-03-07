@@ -5,6 +5,7 @@ type Props = {
   user: User | null;
   onLogout: () => void;
   recording: boolean;
+  isStarting: boolean;
   onStart: () => void;
   onStop: () => void;
   audioUrl: string | null;
@@ -13,7 +14,7 @@ type Props = {
   transcript: string;
 };
 
-export default function RecorderPanel({ user, onLogout, recording, onStart, onStop, audioUrl, mimeType, error, transcript }: Props) {
+export default function RecorderPanel({ user, onLogout, recording, isStarting, onStart, onStop, audioUrl, mimeType, error, transcript }: Props) {
   const [copied, setCopied] = useState(false);
 
   function handleCopy() {
@@ -22,6 +23,7 @@ export default function RecorderPanel({ user, onLogout, recording, onStart, onSt
       setTimeout(() => setCopied(false), 2000);
     });
   }
+
 
   return (
     <div className="flex-1 bg-white shadow-xl rounded-2xl p-8 text-center relative h-fit">
@@ -41,10 +43,10 @@ export default function RecorderPanel({ user, onLogout, recording, onStart, onSt
       <div className="flex gap-4 mb-8 justify-center">
         <button
           onClick={onStart}
-          disabled={recording}
+          disabled={recording || isStarting}
           className="px-6 py-3 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-emerald-200"
         >
-          Start Recording
+          {isStarting ? "Starting..." : "Start Recording"}
         </button>
         <button
           onClick={onStop}

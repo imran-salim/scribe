@@ -23,6 +23,7 @@ export function useRecorder(
   onTranscribed: () => void,
 ) {
   const [recording, setRecording] = useState<boolean>(false);
+  const [isStarting, setIsStarting] = useState<boolean>(false);
   const [transcript, setTranscript] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -30,6 +31,7 @@ export function useRecorder(
   const chunksRef = useRef<BlobPart[]>([]);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const isStartingRef = useRef<boolean>(false);
 
   // Refs keep callbacks stable so start() doesn't need them as deps.
   const onUnauthorizedRef = useRef(onUnauthorized);
@@ -44,6 +46,9 @@ export function useRecorder(
   }, [audioUrl]);
 
   const start = useCallback(async () => {
+    if (isStartingRef.current) return;
+    isStartingRef.current = true;
+    setIsStarting(true);
     setError(null);
     setTranscript("");
     setAudioUrl((prev) => {
@@ -85,6 +90,9 @@ export function useRecorder(
       setRecording(true);
     } catch (e: unknown) {
       setError(getErrorMessage(e));
+    } finally {
+      isStartingRef.current = false;
+      setIsStarting(false);
     }
   }, [token]);
 
@@ -117,5 +125,5 @@ export function useRecorder(
     });
   }, []);
 
-  return { recording, transcript, error, audioUrl, start, stop, reset };
+  return { recording, isStarting, transcript, error, audioUrl, start, stop, reset };
 }

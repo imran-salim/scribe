@@ -10,6 +10,7 @@ const defaultProps = {
   user: mockUser,
   onLogout: vi.fn(),
   recording: false,
+  isStarting: false,
   onStart: vi.fn(),
   onStop: vi.fn(),
   audioUrl: null,
@@ -26,9 +27,14 @@ describe('RecorderPanel', () => {
     expect(screen.getByText('user@example.com')).toBeInTheDocument();
   });
 
-  it('start button is enabled when not recording', () => {
-    render(<RecorderPanel {...defaultProps} recording={false} />);
+  it('start button is enabled when not recording and not starting', () => {
+    render(<RecorderPanel {...defaultProps} recording={false} isStarting={false} />);
     expect(screen.getByRole('button', { name: /start recording/i })).toBeEnabled();
+  });
+
+  it('start button is disabled while starting', () => {
+    render(<RecorderPanel {...defaultProps} recording={false} isStarting={true} />);
+    expect(screen.getByRole('button', { name: /starting\.\.\./i })).toBeDisabled();
   });
 
   it('start button is disabled when recording', () => {

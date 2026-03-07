@@ -63,6 +63,7 @@ describe('useRecorder', () => {
     const { result } = renderHook(() => useRecorder('tok', vi.fn(), vi.fn()));
 
     expect(result.current.recording).toBe(false);
+    expect(result.current.isStarting).toBe(false);
     expect(result.current.transcript).toBe('');
     expect(result.current.error).toBeNull();
     expect(result.current.audioUrl).toBeNull();
@@ -95,6 +96,20 @@ describe('useRecorder', () => {
 
     expect(result.current.error).toMatch(/permission denied/i);
     expect(result.current.recording).toBe(false);
+    expect(result.current.isStarting).toBe(false);
+  });
+
+  it('start() prevents concurrent calls while starting', async () => {
+    const { result } = renderHook(() => useRecorder('tok', vi.fn(), vi.fn()));
+
+    // Fire two concurrent start() calls without awaiting the first
+    await act(async () => {
+      result.current.start();
+      result.current.start();
+    });
+
+    // getUserMedia should only be called once because isStarting gates the second call
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledTimes(1);
   });
 
   it('stop() stops the recorder and sets recording to false', async () => {

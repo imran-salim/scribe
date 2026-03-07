@@ -45,6 +45,7 @@ export default function App() {
           user={auth.user}
           onLogout={auth.logout}
           recording={recorder.recording}
+          isStarting={recorder.isStarting}
           onStart={recorder.start}
           onStop={recorder.stop}
           audioUrl={recorder.audioUrl}
