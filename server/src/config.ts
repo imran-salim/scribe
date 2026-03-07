@@ -2,7 +2,7 @@ import "dotenv/config";
 
 type Config = {
   openaiApiKey: string;
-  allowedOrigins: string | string[];
+  allowedOrigins: string[];
   openaiTranscribeModel: string;
   port: number;
   appPassword?: string;
