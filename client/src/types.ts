@@ -5,13 +5,14 @@ export type User = {
 
 export type AuthResponse = {
   token: string;
+  refreshToken: string;
   user: User;
 };
 
 export type HistoryItem = {
   id: number;
   text: string;
-  filename: string;
+  filename: string | null;
   createdAt: string;
 };
 

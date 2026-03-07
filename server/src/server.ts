@@ -25,9 +25,9 @@ const corsOptions = {
     if (!requestOrigin) return callback(null, true);
     if (requestOrigin?.includes("localhost:")) return callback(null, true);
     
-    const allowed = config.allowedOrigins === "*" 
-      || (Array.isArray(config.allowedOrigins) && config.allowedOrigins.includes(requestOrigin))
-      || config.allowedOrigins === requestOrigin;
+    const allowed = config.allowedOrigins.length === 0
+      || config.allowedOrigins.includes("*")
+      || config.allowedOrigins.includes(requestOrigin);
       
     if (allowed) {
       callback(null, true);

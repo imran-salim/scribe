@@ -4,7 +4,7 @@ import { z } from "zod";
 import validator from "validator";
 import { config } from "../config.js";
 import { authLimiter } from "../context.js";
-import { authMiddleware, userAuthMiddleware } from "../middleware/auth.js";
+import { /* authMiddleware, */ userAuthMiddleware } from "../middleware/auth.js";
 import type { AuthRequest } from "../middleware/auth.js";
 import { login, register, refreshAccessToken, logout } from "../services/auth.js";
 
@@ -88,8 +88,9 @@ router.get("/", (_req: Request, res: Response) => {
   res.json({ ok: true, auth: !!config.appPassword });
 });
 
-router.get("/verify", authMiddleware, (_req: Request, res: Response) => {
-  res.json({ ok: true });
-});
+// Unused — comment back in if a password-verification endpoint is needed
+// router.get("/verify", authMiddleware, (_req: Request, res: Response) => {
+//   res.json({ ok: true });
+// });
 
 export default router;

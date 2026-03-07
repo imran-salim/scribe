@@ -33,7 +33,7 @@ export default function App() {
         isVerifying={auth.isVerifying}
         authError={auth.authError}
         onSubmit={auth.handleAuth}
-        onToggleMode={auth.toggleMode}
+        // onToggleMode={auth.toggleMode}
       />
     );
   }

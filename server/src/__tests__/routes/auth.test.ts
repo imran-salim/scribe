@@ -205,10 +205,11 @@ describe("GET /", () => {
   });
 });
 
-describe("GET /verify", () => {
-  it("returns 200 when the app-password middleware passes", async () => {
-    const res = await request(createApp()).get("/verify");
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ ok: true });
-  });
-});
+// Route commented out — uncomment when /verify is re-enabled
+// describe("GET /verify", () => {
+//   it("returns 200 when the app-password middleware passes", async () => {
+//     const res = await request(createApp()).get("/verify");
+//     expect(res.status).toBe(200);
+//     expect(res.body).toEqual({ ok: true });
+//   });
+// });

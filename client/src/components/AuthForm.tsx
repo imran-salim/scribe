@@ -3,10 +3,10 @@ type Props = {
   isVerifying: boolean;
   authError: string | null;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  onToggleMode: () => void;
+  // onToggleMode: () => void;
 };
 
-export default function AuthForm({ isRegistering, isVerifying, authError, onSubmit, onToggleMode }: Props) {
+export default function AuthForm({ isRegistering, isVerifying, authError, onSubmit, /*onToggleMode*/ }: Props) {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white shadow-xl rounded-2xl p-8 text-center">
@@ -47,6 +47,7 @@ export default function AuthForm({ isRegistering, isVerifying, authError, onSubm
           </button>
         </form>
 
+        {/* Registration disabled — uncomment to re-enable the toggle
         <button
           onClick={onToggleMode}
           className="mt-6 text-sm text-emerald-600 hover:underline font-medium"
@@ -57,6 +58,7 @@ export default function AuthForm({ isRegistering, isVerifying, authError, onSubm
         <div className="mt-6 text-sm text-gray-400 font-medium">
           Registration is currently disabled.
         </div>
+        */}
 
         <p className="mt-8 text-sm text-gray-500">
           For support, contact{" "}

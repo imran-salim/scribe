@@ -1,9 +1,8 @@
 import "dotenv/config";
-import { jwt } from "zod";
 
 type Config = {
   openaiApiKey: string;
-  allowedOrigins: string | boolean | string[];
+  allowedOrigins: string[];
   openaiTranscribeModel: string;
   port: number;
   appPassword?: string;
@@ -12,7 +11,7 @@ type Config = {
 
 export const config: Config = {
   openaiApiKey: process.env.OPENAI_API_KEY ?? "",
-  allowedOrigins: process.env.ALLOWED_ORIGINS?.split(",").map(o => o.trim()) ?? true,
+  allowedOrigins: process.env.ALLOWED_ORIGINS?.split(",").map(o => o.trim()) ?? [],
   openaiTranscribeModel: process.env.OPENAI_TRANSCRIBE_MODEL ?? "gpt-4o-mini-transcribe",
   port: Number(process.env.PORT ?? 8000),
   appPassword: process.env.APP_PASSWORD,

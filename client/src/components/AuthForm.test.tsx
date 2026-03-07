@@ -68,20 +68,18 @@ describe('AuthForm', () => {
     expect(screen.queryByText(/invalid/i)).not.toBeInTheDocument();
   });
 
-  it('calls onToggleMode when toggle button is clicked', async () => {
-    const user = userEvent.setup();
-    render(<AuthForm {...defaultProps} />);
+  // Toggle button commented out in AuthForm — uncomment when registration is re-enabled
+  // it('calls onToggleMode when toggle button is clicked', async () => {
+  //   const user = userEvent.setup();
+  //   render(<AuthForm {...defaultProps} />);
+  //   await user.click(screen.getByRole('button', { name: /need an account/i }));
+  //   expect(defaultProps.onToggleMode).toHaveBeenCalledOnce();
+  // });
 
-    await user.click(screen.getByRole('button', { name: /need an account/i }));
-
-    expect(defaultProps.onToggleMode).toHaveBeenCalledOnce();
-  });
-
-  it('toggle button text reflects isRegistering state', () => {
-    const { rerender } = render(<AuthForm {...defaultProps} isRegistering={false} />);
-    expect(screen.getByRole('button', { name: /need an account/i })).toBeInTheDocument();
-
-    rerender(<AuthForm {...defaultProps} isRegistering={true} />);
-    expect(screen.getByRole('button', { name: /already have an account/i })).toBeInTheDocument();
-  });
+  // it('toggle button text reflects isRegistering state', () => {
+  //   const { rerender } = render(<AuthForm {...defaultProps} isRegistering={false} />);
+  //   expect(screen.getByRole('button', { name: /need an account/i })).toBeInTheDocument();
+  //   rerender(<AuthForm {...defaultProps} isRegistering={true} />);
+  //   expect(screen.getByRole('button', { name: /already have an account/i })).toBeInTheDocument();
+  // });
 });
