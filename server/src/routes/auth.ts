@@ -11,7 +11,7 @@ import { login, register, refreshAccessToken, logout } from "../services/auth.js
 const router = Router();
 
 const authSchema = z.object({
-  email: z.string().email().transform(val => validator.normalizeEmail(val) || val),
+  email: z.email().transform(val => validator.normalizeEmail(val) || val),
   password: z.string().min(8).max(100),
 });
 
@@ -63,9 +63,12 @@ router.post("/auth/refresh", authLimiter, async (req: Request, res: Response) =>
   if (!validation.success) {
     return res.status(400).json({ error: "refreshToken is required" });
   }
+
   try {
     const result = await refreshAccessToken(validation.data.refreshToken);
-    if (!result) return res.status(401).json({ error: "Invalid or expired refresh token" });
+    if (!result) {
+      return res.status(401).json({ error: "Invalid or expired refresh token" });
+    }
     return res.json(result);
   } catch (err: unknown) {
     console.error("Refresh error:", err);
@@ -74,7 +77,10 @@ router.post("/auth/refresh", authLimiter, async (req: Request, res: Response) =>
 });
 
 router.post("/auth/logout", userAuthMiddleware, async (req: AuthRequest, res: Response) => {
-  if (!req.userId) return res.status(401).json({ error: "Unauthorized" });
+  if (!req.userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
   try {
     await logout(req.userId);
     return res.json({ ok: true });
