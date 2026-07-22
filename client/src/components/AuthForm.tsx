@@ -18,7 +18,7 @@ export default function AuthForm({ isRegistering, isVerifying, authError, onSubm
           <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-800">
             <p className="font-bold mb-1">Try the demo account</p>
             <p>
-              Email: <span className="font-mono">demo@scripe.app</span>
+              Email: <span className="font-mono">demo@scribe.app</span>
             </p>
             <p>
               Password: <span className="font-mono">demo1234</span>
