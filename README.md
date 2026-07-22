@@ -4,7 +4,7 @@ A secure, full-stack audio transcription application. Record audio in your brows
 
 **Live Application**: [https://scribe-eight-mauve.vercel.app/](https://scribe-eight-mauve.vercel.app/)
 
-> **Note**: Account registration is currently disabled. Please contact the author at [narmilas@proton.me](mailto:narmilas@proton.me) to request access.
+> **Note**: Account registration is currently disabled, but a demo account is available — the credentials are shown on the login page. The API runs on Render's free tier and goes offline after a period of inactivity, so the first sign-in may take up to a minute while the server spins back up. For anything else, contact the author at [narmilas@proton.me](mailto:narmilas@proton.me).
 
 ## Features
 - **User Authentication**: Secure registration and login using JWT and Bcrypt, with silent token refresh so sessions stay alive without re-login.
@@ -22,7 +22,7 @@ A secure, full-stack audio transcription application. Record audio in your brows
 - **Backend**: Express, Drizzle ORM, Node-Postgres.
 - **AI**: OpenAI Audio Transcriptions API.
 - **Auth**: JSON Web Tokens (JWT), Bcrypt.js.
-- **Database**: PostgreSQL.
+- **Database**: PostgreSQL (hosted on Neon in production).
 
 ## Quick Start
 
@@ -48,5 +48,6 @@ npm run dev
 ```
 
 ## Deployment
-- **API & Database**: Use the included `render.yaml` to deploy to **Render**. It handles the Web Service and PostgreSQL setup automatically.
+- **API**: Use the included `render.yaml` to deploy the Express server to **Render**. Note that on the free tier the service sleeps after a period of inactivity and takes up to a minute to wake.
+- **Database**: Create a PostgreSQL database on **Neon** and set `DATABASE_URL` on the Render service to its connection string. Migrations run automatically on deploy (`npm run db:migrate`).
 - **Frontend**: Deploy the `client/` directory to **Vercel**. Set `VITE_API_URL` to your Render service URL.
