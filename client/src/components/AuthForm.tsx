@@ -14,6 +14,17 @@ export default function AuthForm({ isRegistering, isVerifying, authError, onSubm
         <h2 className="text-xl font-bold text-gray-700 mb-6">
           {isRegistering ? "Create an account" : "Sign in"}
         </h2>
+        {!isRegistering && (
+          <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-800">
+            <p className="font-bold mb-1">Try the demo account</p>
+            <p>
+              Email: <span className="font-mono">demo@scripe.app</span>
+            </p>
+            <p>
+              Password: <span className="font-mono">demo1234</span>
+            </p>
+          </div>
+        )}
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <input
