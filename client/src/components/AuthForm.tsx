@@ -25,6 +25,16 @@ export default function AuthForm({ isRegistering, isVerifying, authError, onSubm
             </p>
           </div>
         )}
+        {isVerifying && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+            <p className="font-bold mb-1">Heads up</p>
+            <p>
+              The server is hosted on Render's free tier and goes offline after
+              a period of inactivity. If it has been asleep, signing in may take
+              up to a minute while it spins back up.
+            </p>
+          </div>
+        )}
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <input
